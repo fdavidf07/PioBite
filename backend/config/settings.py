@@ -1,35 +1,46 @@
 """
-Configuración principal del backend Django de PíoBite.
+Configuración principal de Django para PíoBite.
 
-Este archivo activa Django REST Framework, CORS, autenticación JWT,
-archivos multimedia y las aplicaciones propias del proyecto:
-accounts, catalog y orders.
+Este archivo está preparado para funcionar tanto en local como en Railway:
+- En local usa SQLite si no hay DATABASE_URL.
+- En Railway usa PostgreSQL mediante DATABASE_URL.
+- Lee variables desde .env o desde Railway Variables.
+- Permite configurar Google Login, Redsys TEST, CORS, CSRF y archivos estáticos.
 """
 
 from pathlib import Path
 from datetime import timedelta
 import os
-from dotenv import load_dotenv
+
 import dj_database_url
+from dotenv import load_dotenv
+
+
+# Carga variables desde backend/.env en local
 load_dotenv()
-# Ruta base del proyecto
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Clave secreta de Django.
-# En producción la cambiaremos por una variable de entorno.
+
+# SECURITY
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "clave-desarrollo-piobite")
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-# En desarrollo dejamos DEBUG en True.
-# En producción debe ser False.
+
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-# Hosts permitidos para desarrollo local.
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS",
-    "localhost,127.0.0.1",
-).split(",")
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1",
+    ).split(",")
+    if host.strip()
+]
 
-# Aplicaciones instaladas
+
+# APPS
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -47,7 +58,9 @@ INSTALLED_APPS = [
     "payments",
 ]
 
-# Middlewares del proyecto
+
+# MIDDLEWARE
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 
@@ -62,19 +75,17 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Archivo principal de rutas
+
 ROOT_URLCONF = "config.urls"
 
-# Configuración de plantillas
+
+# TEMPLATES
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-
-        # De momento no usamos plantillas propias porque el frontend será React
         "DIRS": [],
-
         "APP_DIRS": True,
-
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
@@ -85,11 +96,14 @@ TEMPLATES = [
     },
 ]
 
-# Configuración WSGI
+
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Base de datos local.
-# Para empezar usamos SQLite. Más adelante en Railway usaremos PostgreSQL.
+
+# DATABASE
+# En Railway usa DATABASE_URL.
+# En local usa SQLite si DATABASE_URL no existe.
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
@@ -107,10 +121,14 @@ else:
         }
     }
 
-# Modelo de usuario personalizado
+
+# CUSTOM USER
+
 AUTH_USER_MODEL = "accounts.User"
 
-# Validadores de contraseña
+
+# PASSWORD VALIDATION
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -126,13 +144,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Idioma y zona horaria
+
+# LANGUAGE / TIMEZONE
+
 LANGUAGE_CODE = "es-es"
+
 TIME_ZONE = "Europe/Madrid"
+
 USE_I18N = True
+
 USE_TZ = True
 
-# Archivos estáticos
+
+# STATIC FILES
+
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -144,44 +169,77 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-# Archivos multimedia.
-# Aquí se guardarán imágenes de productos si más adelante las subimos desde admin.
+
+
+# MEDIA FILES
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ID automático por defecto en modelos
+
+# DEFAULT PRIMARY KEY
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Permitimos que React en local pueda llamar al backend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 
-# Configuración de Django REST Framework
+# DJANGO REST FRAMEWORK / JWT
+
 REST_FRAMEWORK = {
-    # Usaremos JWT para autenticar usuarios desde React
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-
-    # Por defecto las rutas estarán protegidas.
-    # Luego en algunas vistas públicas cambiaremos permisos.
     "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ),
 }
 
-# Configuración de tokens JWT
-SIMPLE_JWT = {
-    # Duración del token de acceso
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
 
-    # Duración del token de refresco
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
-# Configuración Redsys TEST.
-# Estos valores se cargarán desde backend/.env.
+
+
+# CORS / CSRF
+
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+
+# RAILWAY / HTTPS
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+
+# GOOGLE LOGIN
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+
+# REDSYS TEST
+
 REDSYS_MERCHANT_CODE = os.getenv("REDSYS_MERCHANT_CODE", "")
 REDSYS_TERMINAL = os.getenv("REDSYS_TERMINAL", "1")
 REDSYS_CURRENCY = os.getenv("REDSYS_CURRENCY", "978")
@@ -196,6 +254,8 @@ REDSYS_SIGNATURE_VERSION = os.getenv(
     "HMAC_SHA512_V2",
 )
 
-# URLs de la aplicación.
+
+# APP URLS
+
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
