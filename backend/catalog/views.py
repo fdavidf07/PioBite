@@ -1,20 +1,22 @@
 """
 Vistas del catálogo de PíoBite.
 
-Permiten consultar categorías, productos, productos populares y aplicar
-filtros básicos desde React.
+Incluye:
+- endpoints públicos para que los clientes vean categorías y productos
+- endpoints privados para que cafetería pueda crear, editar y borrar productos
 """
 
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 
+from accounts.permissions import IsCafeteriaStaff
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductSerializer
 
 
 class CategoryListView(generics.ListAPIView):
     """
-    Lista todas las categorías.
+    Lista pública de categorías.
 
     URL:
     GET /api/categories/
@@ -27,7 +29,7 @@ class CategoryListView(generics.ListAPIView):
 
 class ProductListView(generics.ListAPIView):
     """
-    Lista productos disponibles.
+    Lista pública de productos disponibles.
 
     Filtros opcionales:
     - ?category=1
@@ -62,7 +64,7 @@ class ProductListView(generics.ListAPIView):
 
 class PopularProductListView(generics.ListAPIView):
     """
-    Lista productos populares.
+    Lista pública de productos populares.
 
     URL:
     GET /api/products/popular/
@@ -76,3 +78,68 @@ class PopularProductListView(generics.ListAPIView):
             is_available=True,
             is_popular=True,
         ).select_related("category").order_by("name")
+
+
+class StaffCategoryListCreateView(generics.ListCreateAPIView):
+    """
+    Gestión de categorías para cafetería.
+
+    URL:
+    GET  /api/staff/categories/
+    POST /api/staff/categories/
+    """
+
+    queryset = Category.objects.all().order_by("id")
+    serializer_class = CategorySerializer
+    permission_classes = [IsCafeteriaStaff]
+
+
+class StaffCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Editar o borrar una categoría desde cafetería.
+
+    URL:
+    GET    /api/staff/categories/<id>/
+    PUT    /api/staff/categories/<id>/
+    PATCH  /api/staff/categories/<id>/
+    DELETE /api/staff/categories/<id>/
+    """
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsCafeteriaStaff]
+
+
+class StaffProductListCreateView(generics.ListCreateAPIView):
+    """
+    Gestión de productos para cafetería.
+
+    URL:
+    GET  /api/staff/products/
+    POST /api/staff/products/
+    """
+
+    serializer_class = ProductSerializer
+    permission_classes = [IsCafeteriaStaff]
+
+    def get_queryset(self):
+        return Product.objects.all().select_related("category").order_by(
+            "category__name",
+            "name",
+        )
+
+
+class StaffProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Editar o borrar un producto desde cafetería.
+
+    URL:
+    GET    /api/staff/products/<id>/
+    PUT    /api/staff/products/<id>/
+    PATCH  /api/staff/products/<id>/
+    DELETE /api/staff/products/<id>/
+    """
+
+    queryset = Product.objects.all().select_related("category")
+    serializer_class = ProductSerializer
+    permission_classes = [IsCafeteriaStaff]

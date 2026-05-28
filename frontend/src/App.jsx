@@ -1,14 +1,13 @@
 /*
   Componente principal de PíoBite.
 
-  Este archivo controla toda la app principal:
+  Incluye:
+  - Login normal
+  - Registro
   - Login con Google
-  - Catálogo de productos desde Django
-  - Carrito
-  - Selección de horario
-  - Creación de pedido real
-  - Pantalla de confirmación
-  - Redirección a Redsys TEST para simular un pago real sin cobro
+  - Zona cliente
+  - Zona cafetería protegida por rol
+  - Gestión de pedidos, productos, categorías y horarios
 */
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,21 +16,34 @@ import {
   clearAuthTokens,
   createOrder,
   createRedsysPayment,
+  deleteStaffCategory,
+  deleteStaffProduct,
+  deleteStaffTimeSlot,
   getCategories,
   getMe,
+  getMyOrders,
   getPopularProducts,
   getProducts,
+  getStaffCategories,
+  getStaffOrders,
+  getStaffProducts,
+  getStaffTimeSlots,
   getTimeSlots,
   hasAccessToken,
   loginWithGoogle,
+  loginWithPassword,
+  registerUser,
+  saveStaffCategory,
+  saveStaffProduct,
+  saveStaffTimeSlot,
   setAuthTokens,
+  updateStaffOrderStatus,
 } from "./api/client";
 
 import {
   Search,
   ShoppingCart,
   Home,
-  Heart,
   ClipboardList,
   User,
   Plus,
@@ -41,12 +53,34 @@ import {
   LogOut,
   CheckCircle2,
   ArrowLeft,
+  ShieldCheck,
+  Package,
+  Calendar,
+  Save,
+  Edit,
+  X,
+  RefreshCw,
 } from "lucide-react";
 
 function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
+  const [authMode, setAuthMode] = useState("login");
+
+  const [loginForm, setLoginForm] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [registerForm, setRegisterForm] = useState({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    phone: "",
+  });
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -72,6 +106,13 @@ function App() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState("");
 
+  const [myOrders, setMyOrders] = useState([]);
+  const [myOrdersLoading, setMyOrdersLoading] = useState(false);
+
+  const isStaffUser = (user) => {
+    return user?.role === "staff" || user?.is_staff === true;
+  };
+
   useEffect(() => {
     const loadStoredUser = async () => {
       try {
@@ -96,6 +137,59 @@ function App() {
     loadStoredUser();
   }, []);
 
+  const finishLogin = async ({ access, refresh, user = null }) => {
+    setAuthTokens({ access, refresh });
+
+    if (user) {
+      setAuthUser(user);
+      return;
+    }
+
+    const currentUser = await getMe();
+    setAuthUser(currentUser);
+  };
+
+  const handlePasswordLogin = async (event) => {
+    event.preventDefault();
+
+    try {
+      setAuthError("");
+
+      const data = await loginWithPassword(loginForm);
+      await finishLogin(data);
+    } catch (err) {
+      console.error(err);
+      setAuthError("Usuario o contraseña incorrectos.");
+    }
+  };
+
+  const handleRegister = async (event) => {
+    event.preventDefault();
+
+    try {
+      setAuthError("");
+
+      await registerUser(registerForm);
+
+      const data = await loginWithPassword({
+        username: registerForm.username,
+        password: registerForm.password,
+      });
+
+      await finishLogin(data);
+    } catch (err) {
+      console.error(err);
+
+      const backendMessage =
+        err.response?.data?.username?.[0] ||
+        err.response?.data?.email?.[0] ||
+        err.response?.data?.password?.[0] ||
+        "No se pudo registrar el usuario.";
+
+      setAuthError(backendMessage);
+    }
+  };
+
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setAuthError("");
@@ -107,12 +201,11 @@ function App() {
 
       const data = await loginWithGoogle(credentialResponse.credential);
 
-      setAuthTokens({
+      await finishLogin({
         access: data.access,
         refresh: data.refresh,
+        user: data.user,
       });
-
-      setAuthUser(data.user);
     } catch (err) {
       console.error(err);
 
@@ -134,10 +227,11 @@ function App() {
     setCreatedOrder(null);
     setSelectedTimeSlot(null);
     setPaymentError("");
+    setActiveTab("home");
   };
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authUser || isStaffUser(authUser)) {
       return;
     }
 
@@ -160,9 +254,7 @@ function App() {
         setTimeSlots(timeSlotsData);
       } catch (err) {
         console.error(err);
-        setError(
-          "No se pudo conectar con el backend. Revisa que Django esté encendido en el puerto 8000."
-        );
+        setError("No se pudo conectar con el backend.");
       } finally {
         setLoading(false);
       }
@@ -172,7 +264,7 @@ function App() {
   }, [authUser]);
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authUser || isStaffUser(authUser)) {
       return;
     }
 
@@ -194,6 +286,24 @@ function App() {
 
     loadFilteredProducts();
   }, [selectedCategory, search, authUser]);
+
+  const loadMyOrders = async () => {
+    try {
+      setMyOrdersLoading(true);
+      const orders = await getMyOrders();
+      setMyOrders(orders);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setMyOrdersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "orders" && authUser && !isStaffUser(authUser)) {
+      loadMyOrders();
+    }
+  }, [activeTab, authUser]);
 
   const cartItemsCount = useMemo(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);
@@ -304,8 +414,6 @@ function App() {
   };
 
   const submitRedsysForm = (paymentData) => {
-    console.log("Datos Redsys recibidos:", paymentData);
-
     if (
       !paymentData.redsys_url ||
       !paymentData.Ds_SignatureVersion ||
@@ -391,29 +499,23 @@ function App() {
 
   if (!authUser) {
     return (
-      <div className="app">
-        <main className="phone-shell">
-          <div className="auth-screen">
-            <div className="auth-logo">P</div>
-            <h1>PíoBite</h1>
-            <h2>Cafetería Instituto Pío Baroja</h2>
-            <p>Inicia sesión con Google para realizar pedidos en la cafetería.</p>
-
-            <div className="google-login-box">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setAuthError("Google canceló o rechazó el inicio de sesión.");
-                }}
-                useOneTap={false}
-              />
-            </div>
-
-            {authError && <div className="auth-error">{authError}</div>}
-          </div>
-        </main>
-      </div>
+      <AuthScreen
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        loginForm={loginForm}
+        setLoginForm={setLoginForm}
+        registerForm={registerForm}
+        setRegisterForm={setRegisterForm}
+        onLogin={handlePasswordLogin}
+        onRegister={handleRegister}
+        onGoogleSuccess={handleGoogleSuccess}
+        authError={authError}
+      />
     );
+  }
+
+  if (isStaffUser(authUser)) {
+    return <StaffPanel authUser={authUser} onLogout={handleLogout} />;
   }
 
   if (checkoutStep === "timeslot") {
@@ -446,6 +548,7 @@ function App() {
               setCreatedOrder(null);
               setCheckoutStep("catalog");
               setPaymentError("");
+              setActiveTab("orders");
             }}
             onPay={handlePayWithRedsys}
             paymentLoading={paymentLoading}
@@ -492,128 +595,59 @@ function App() {
             </div>
           </div>
 
-          <div className="search-box">
-            <Search size={18} />
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
+          {activeTab === "home" && (
+            <div className="search-box">
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          )}
         </header>
 
         <section className="content">
-          {error && <div className="error-box">{error}</div>}
+          {activeTab === "home" && (
+            <CustomerCatalog
+              loading={loading}
+              error={error}
+              categories={categories}
+              products={products}
+              popularProducts={popularProducts}
+              timeSlots={timeSlots}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              search={search}
+              onAdd={addToCart}
+            />
+          )}
 
-          {loading ? (
-            <div className="loading-card">Cargando productos...</div>
-          ) : (
-            <>
-              <section className="categories-section">
-                <div className="section-title-row">
-                  <h2>Categorías</h2>
-                </div>
+          {activeTab === "orders" && (
+            <CustomerOrders
+              orders={myOrders}
+              loading={myOrdersLoading}
+              onRefresh={loadMyOrders}
+            />
+          )}
 
-                <div className="category-list">
-                  <button
-                    className={
-                      selectedCategory === null
-                        ? "category-chip active"
-                        : "category-chip"
-                    }
-                    type="button"
-                    onClick={() => setSelectedCategory(null)}
-                  >
-                    🍽 Todos
-                  </button>
-
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      className={
-                        selectedCategory === category.id
-                          ? "category-chip active"
-                          : "category-chip"
-                      }
-                      type="button"
-                      onClick={() => setSelectedCategory(category.id)}
-                    >
-                      <span>{category.icon || "•"}</span>
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              {popularProducts.length > 0 &&
-                selectedCategory === null &&
-                !search && (
-                  <section className="products-section">
-                    <div className="section-title-row">
-                      <h2>⭐ Populares</h2>
-                    </div>
-
-                    <div className="horizontal-products">
-                      {popularProducts.map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          onAdd={addToCart}
-                          compact
-                        />
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-              <section className="products-section">
-                <div className="section-title-row">
-                  <h2>Productos</h2>
-                  <span>{products.length}</span>
-                </div>
-
-                {products.length === 0 ? (
-                  <div className="empty-card">
-                    No hay productos que coincidan con la búsqueda.
-                  </div>
-                ) : (
-                  <div className="products-grid">
-                    {products.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onAdd={addToCart}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="timeslot-preview">
-                <div className="section-title-row">
-                  <h2>
-                    <Clock size={18} /> Horarios
-                  </h2>
-                </div>
-
-                <div className="timeslot-list">
-                  {timeSlots.slice(0, 4).map((slot) => (
-                    <div
-                      key={slot.id}
-                      className={slot.is_full ? "timeslot full" : "timeslot"}
-                    >
-                      <span>{slot.label}</span>
-                      <small>{slot.is_full ? "Completo" : "Disponible"}</small>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </>
+          {activeTab === "profile" && (
+            <CustomerProfile authUser={authUser} onLogout={handleLogout} />
           )}
         </section>
 
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <BottomNav
+          activeTab={activeTab}
+          onTabClick={(tab) => {
+            if (tab === "cart") {
+              setCartOpen(true);
+              return;
+            }
+
+            setActiveTab(tab);
+          }}
+        />
 
         {cartOpen && (
           <CartDrawer
@@ -628,6 +662,968 @@ function App() {
         )}
       </main>
     </div>
+  );
+}
+
+function AuthScreen({
+  authMode,
+  setAuthMode,
+  loginForm,
+  setLoginForm,
+  registerForm,
+  setRegisterForm,
+  onLogin,
+  onRegister,
+  onGoogleSuccess,
+  authError,
+}) {
+  return (
+    <div className="app">
+      <main className="phone-shell">
+        <div className="auth-screen">
+          <div className="auth-logo">P</div>
+          <h1>PíoBite</h1>
+          <h2>Cafetería Instituto Pío Baroja</h2>
+
+          <div className="auth-switch">
+            <button
+              type="button"
+              className={authMode === "login" ? "active" : ""}
+              onClick={() => setAuthMode("login")}
+            >
+              Iniciar sesión
+            </button>
+
+            <button
+              type="button"
+              className={authMode === "register" ? "active" : ""}
+              onClick={() => setAuthMode("register")}
+            >
+              Registrarse
+            </button>
+          </div>
+
+          {authMode === "login" ? (
+            <form className="auth-form" onSubmit={onLogin}>
+              <input
+                type="text"
+                placeholder="Usuario"
+                value={loginForm.username}
+                onChange={(event) =>
+                  setLoginForm({ ...loginForm, username: event.target.value })
+                }
+              />
+
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={loginForm.password}
+                onChange={(event) =>
+                  setLoginForm({ ...loginForm, password: event.target.value })
+                }
+              />
+
+              <button type="submit">Entrar</button>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={onRegister}>
+              <input
+                type="text"
+                placeholder="Usuario"
+                value={registerForm.username}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    username: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={registerForm.email}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    email: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={registerForm.firstName}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    firstName: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Apellidos"
+                value={registerForm.lastName}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    lastName: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={registerForm.password}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    password: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Teléfono opcional"
+                value={registerForm.phone}
+                onChange={(event) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    phone: event.target.value,
+                  })
+                }
+              />
+
+              <button type="submit">Crear cuenta</button>
+            </form>
+          )}
+
+          <div className="google-login-box">
+            <GoogleLogin
+              onSuccess={onGoogleSuccess}
+              onError={() => {}}
+              useOneTap={false}
+            />
+          </div>
+
+          {authError && <div className="auth-error">{authError}</div>}
+
+          <p className="auth-note">
+            El personal de cafetería debe usar una cuenta autorizada por el
+            administrador.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function CustomerCatalog({
+  loading,
+  error,
+  categories,
+  products,
+  popularProducts,
+  timeSlots,
+  selectedCategory,
+  setSelectedCategory,
+  search,
+  onAdd,
+}) {
+  return (
+    <>
+      {error && <div className="error-box">{error}</div>}
+
+      {loading ? (
+        <div className="loading-card">Cargando productos...</div>
+      ) : (
+        <>
+          <section className="categories-section">
+            <div className="section-title-row">
+              <h2>Categorías</h2>
+            </div>
+
+            <div className="category-list">
+              <button
+                className={
+                  selectedCategory === null
+                    ? "category-chip active"
+                    : "category-chip"
+                }
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+              >
+                🍽 Todos
+              </button>
+
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  className={
+                    selectedCategory === category.id
+                      ? "category-chip active"
+                      : "category-chip"
+                  }
+                  type="button"
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <span>{category.icon || "•"}</span>
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {popularProducts.length > 0 && selectedCategory === null && !search && (
+            <section className="products-section">
+              <div className="section-title-row">
+                <h2>⭐ Populares</h2>
+              </div>
+
+              <div className="horizontal-products">
+                {popularProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAdd={onAdd}
+                    compact
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="products-section">
+            <div className="section-title-row">
+              <h2>Productos</h2>
+              <span>{products.length}</span>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="empty-card">
+                No hay productos que coincidan con la búsqueda.
+              </div>
+            ) : (
+              <div className="products-grid">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAdd={onAdd}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="timeslot-preview">
+            <div className="section-title-row">
+              <h2>
+                <Clock size={18} /> Horarios
+              </h2>
+            </div>
+
+            <div className="timeslot-list">
+              {timeSlots.slice(0, 4).map((slot) => (
+                <div
+                  key={slot.id}
+                  className={slot.is_full ? "timeslot full" : "timeslot"}
+                >
+                  <span>{slot.label}</span>
+                  <small>{slot.is_full ? "Completo" : "Disponible"}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+    </>
+  );
+}
+
+function CustomerOrders({ orders, loading, onRefresh }) {
+  return (
+    <section className="simple-screen">
+      <div className="section-title-row">
+        <h2>Mis pedidos</h2>
+
+        <button type="button" className="mini-action-button" onClick={onRefresh}>
+          <RefreshCw size={15} />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading-card">Cargando pedidos...</div>
+      ) : orders.length === 0 ? (
+        <div className="empty-card">Todavía no tienes pedidos.</div>
+      ) : (
+        <div className="staff-list">
+          {orders.map((order) => (
+            <article key={order.id} className="staff-card">
+              <div className="staff-card-top">
+                <div>
+                  <strong>{order.code}</strong>
+                  <span>{order.time_slot?.label}</span>
+                </div>
+
+                <span className="status-pill">{order.status_display}</span>
+              </div>
+
+              <p>
+                Pago:{" "}
+                <strong>{order.payment_status_display || order.payment_status}</strong>
+              </p>
+
+              <p>Total: {Number(order.total_price).toFixed(2)}€</p>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CustomerProfile({ authUser, onLogout }) {
+  return (
+    <section className="simple-screen">
+      <div className="profile-card">
+        <div className="profile-avatar">
+          {authUser.first_name?.[0] || authUser.username?.[0] || "U"}
+        </div>
+
+        <h2>{authUser.first_name || authUser.username}</h2>
+        <p>{authUser.email}</p>
+        <span>{authUser.role_display || authUser.role}</span>
+
+        <button type="button" className="confirm-order-button" onClick={onLogout}>
+          Cerrar sesión
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StaffPanel({ authUser, onLogout }) {
+  const [staffTab, setStaffTab] = useState("orders");
+  const [loading, setLoading] = useState(false);
+  const [staffError, setStaffError] = useState("");
+
+  const [orders, setOrders] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+
+  const emptyCategory = { id: null, name: "", icon: "" };
+  const emptyProduct = {
+    id: null,
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    is_available: true,
+    is_healthy: false,
+    is_popular: false,
+  };
+  const emptyTimeSlot = {
+    id: null,
+    label: "",
+    start_time: "",
+    end_time: "",
+    max_orders: 10,
+    is_active: true,
+  };
+
+  const [categoryForm, setCategoryForm] = useState(emptyCategory);
+  const [productForm, setProductForm] = useState(emptyProduct);
+  const [timeSlotForm, setTimeSlotForm] = useState(emptyTimeSlot);
+
+  const loadStaffData = async () => {
+    try {
+      setLoading(true);
+      setStaffError("");
+
+      const [ordersData, categoriesData, productsData, timeSlotsData] =
+        await Promise.all([
+          getStaffOrders(),
+          getStaffCategories(),
+          getStaffProducts(),
+          getStaffTimeSlots(),
+        ]);
+
+      setOrders(ordersData);
+      setCategories(categoriesData);
+      setProducts(productsData);
+      setTimeSlots(timeSlotsData);
+    } catch (err) {
+      console.error(err);
+      setStaffError("No se pudieron cargar los datos del panel cafetería.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStaffData();
+  }, []);
+
+  const handleStatusChange = async (orderId, status) => {
+    try {
+      await updateStaffOrderStatus({ orderId, status });
+      await loadStaffData();
+    } catch (err) {
+      console.error(err);
+      setStaffError("No se pudo actualizar el estado del pedido.");
+    }
+  };
+
+  const handleCategorySubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      await saveStaffCategory(categoryForm);
+      setCategoryForm(emptyCategory);
+      await loadStaffData();
+    } catch (err) {
+      console.error(err);
+      setStaffError("No se pudo guardar la categoría.");
+    }
+  };
+
+  const handleProductSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      await saveStaffProduct(productForm);
+      setProductForm(emptyProduct);
+      await loadStaffData();
+    } catch (err) {
+      console.error(err);
+      setStaffError("No se pudo guardar el producto.");
+    }
+  };
+
+  const handleTimeSlotSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      await saveStaffTimeSlot(timeSlotForm);
+      setTimeSlotForm(emptyTimeSlot);
+      await loadStaffData();
+    } catch (err) {
+      console.error(err);
+      setStaffError("No se pudo guardar la franja horaria.");
+    }
+  };
+
+  return (
+    <div className="app">
+      <main className="phone-shell staff-shell">
+        <header className="staff-hero">
+          <div>
+            <p>Panel cafetería</p>
+            <h1>PíoBite</h1>
+            <span>{authUser.email || authUser.username}</span>
+          </div>
+
+          <button type="button" className="logout-button" onClick={onLogout}>
+            <LogOut size={18} />
+          </button>
+        </header>
+
+        <nav className="staff-tabs">
+          <button
+            className={staffTab === "orders" ? "active" : ""}
+            type="button"
+            onClick={() => setStaffTab("orders")}
+          >
+            <ClipboardList size={17} />
+            Pedidos
+          </button>
+
+          <button
+            className={staffTab === "products" ? "active" : ""}
+            type="button"
+            onClick={() => setStaffTab("products")}
+          >
+            <Package size={17} />
+            Productos
+          </button>
+
+          <button
+            className={staffTab === "timeslots" ? "active" : ""}
+            type="button"
+            onClick={() => setStaffTab("timeslots")}
+          >
+            <Calendar size={17} />
+            Horarios
+          </button>
+        </nav>
+
+        <section className="content staff-content">
+          {staffError && <div className="error-box">{staffError}</div>}
+
+          {loading ? (
+            <div className="loading-card">Cargando panel...</div>
+          ) : (
+            <>
+              {staffTab === "orders" && (
+                <StaffOrdersPanel
+                  orders={orders}
+                  onStatusChange={handleStatusChange}
+                  onRefresh={loadStaffData}
+                />
+              )}
+
+              {staffTab === "products" && (
+                <StaffProductsPanel
+                  categories={categories}
+                  products={products}
+                  productForm={productForm}
+                  setProductForm={setProductForm}
+                  categoryForm={categoryForm}
+                  setCategoryForm={setCategoryForm}
+                  onProductSubmit={handleProductSubmit}
+                  onCategorySubmit={handleCategorySubmit}
+                  onEditProduct={setProductForm}
+                  onEditCategory={setCategoryForm}
+                  onDeleteProduct={async (id) => {
+                    await deleteStaffProduct(id);
+                    await loadStaffData();
+                  }}
+                  onDeleteCategory={async (id) => {
+                    await deleteStaffCategory(id);
+                    await loadStaffData();
+                  }}
+                  emptyProduct={emptyProduct}
+                  emptyCategory={emptyCategory}
+                />
+              )}
+
+              {staffTab === "timeslots" && (
+                <StaffTimeSlotsPanel
+                  timeSlots={timeSlots}
+                  timeSlotForm={timeSlotForm}
+                  setTimeSlotForm={setTimeSlotForm}
+                  onSubmit={handleTimeSlotSubmit}
+                  onEdit={setTimeSlotForm}
+                  onDelete={async (id) => {
+                    await deleteStaffTimeSlot(id);
+                    await loadStaffData();
+                  }}
+                  emptyTimeSlot={emptyTimeSlot}
+                />
+              )}
+            </>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function StaffOrdersPanel({ orders, onStatusChange, onRefresh }) {
+  const statuses = [
+    { value: "pending", label: "Pendiente" },
+    { value: "preparing", label: "Preparando" },
+    { value: "ready", label: "Listo" },
+    { value: "delivered", label: "Entregado" },
+    { value: "cancelled", label: "Cancelado" },
+  ];
+
+  return (
+    <section>
+      <div className="section-title-row">
+        <h2>Pedidos</h2>
+
+        <button type="button" className="mini-action-button" onClick={onRefresh}>
+          <RefreshCw size={15} />
+        </button>
+      </div>
+
+      <div className="staff-list">
+        {orders.map((order) => (
+          <article key={order.id} className="staff-card">
+            <div className="staff-card-top">
+              <div>
+                <strong>{order.code}</strong>
+                <span>{order.username}</span>
+              </div>
+
+              <span className="status-pill">{order.status_display}</span>
+            </div>
+
+            <p>
+              Recogida: <strong>{order.time_slot?.label}</strong>
+            </p>
+
+            <p>
+              Pago:{" "}
+              <strong>{order.payment_status_display || order.payment_status}</strong>
+            </p>
+
+            <p>Total: {Number(order.total_price).toFixed(2)}€</p>
+
+            <div className="staff-status-grid">
+              {statuses.map((status) => (
+                <button
+                  key={status.value}
+                  type="button"
+                  className={order.status === status.value ? "active" : ""}
+                  onClick={() => onStatusChange(order.id, status.value)}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StaffProductsPanel({
+  categories,
+  products,
+  productForm,
+  setProductForm,
+  categoryForm,
+  setCategoryForm,
+  onProductSubmit,
+  onCategorySubmit,
+  onEditProduct,
+  onEditCategory,
+  onDeleteProduct,
+  onDeleteCategory,
+  emptyProduct,
+  emptyCategory,
+}) {
+  return (
+    <section>
+      <div className="section-title-row">
+        <h2>Categorías</h2>
+      </div>
+
+      <form className="staff-form" onSubmit={onCategorySubmit}>
+        <input
+          type="text"
+          placeholder="Nombre categoría"
+          value={categoryForm.name}
+          onChange={(event) =>
+            setCategoryForm({ ...categoryForm, name: event.target.value })
+          }
+        />
+
+        <input
+          type="text"
+          placeholder="Icono"
+          value={categoryForm.icon || ""}
+          onChange={(event) =>
+            setCategoryForm({ ...categoryForm, icon: event.target.value })
+          }
+        />
+
+        <button type="submit">
+          <Save size={16} />
+          {categoryForm.id ? "Actualizar categoría" : "Crear categoría"}
+        </button>
+
+        {categoryForm.id && (
+          <button
+            type="button"
+            className="secondary-form-button"
+            onClick={() => setCategoryForm(emptyCategory)}
+          >
+            Cancelar edición
+          </button>
+        )}
+      </form>
+
+      <div className="staff-list compact-list">
+        {categories.map((category) => (
+          <article key={category.id} className="staff-mini-card">
+            <span>
+              {category.icon} {category.name}
+            </span>
+
+            <div>
+              <button type="button" onClick={() => onEditCategory(category)}>
+                <Edit size={15} />
+              </button>
+
+              <button type="button" onClick={() => onDeleteCategory(category.id)}>
+                <Trash2 size={15} />
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="section-title-row">
+        <h2>Productos</h2>
+      </div>
+
+      <form className="staff-form" onSubmit={onProductSubmit}>
+        <input
+          type="text"
+          placeholder="Nombre producto"
+          value={productForm.name}
+          onChange={(event) =>
+            setProductForm({ ...productForm, name: event.target.value })
+          }
+        />
+
+        <textarea
+          placeholder="Descripción"
+          value={productForm.description || ""}
+          onChange={(event) =>
+            setProductForm({ ...productForm, description: event.target.value })
+          }
+        />
+
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Precio"
+          value={productForm.price}
+          onChange={(event) =>
+            setProductForm({ ...productForm, price: event.target.value })
+          }
+        />
+
+        <select
+          value={productForm.category}
+          onChange={(event) =>
+            setProductForm({ ...productForm, category: event.target.value })
+          }
+        >
+          <option value="">Selecciona categoría</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.icon} {category.name}
+            </option>
+          ))}
+        </select>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={productForm.is_available}
+            onChange={(event) =>
+              setProductForm({
+                ...productForm,
+                is_available: event.target.checked,
+              })
+            }
+          />
+          Disponible
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={productForm.is_healthy}
+            onChange={(event) =>
+              setProductForm({
+                ...productForm,
+                is_healthy: event.target.checked,
+              })
+            }
+          />
+          Saludable
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={productForm.is_popular}
+            onChange={(event) =>
+              setProductForm({
+                ...productForm,
+                is_popular: event.target.checked,
+              })
+            }
+          />
+          Popular
+        </label>
+
+        <button type="submit">
+          <Save size={16} />
+          {productForm.id ? "Actualizar producto" : "Crear producto"}
+        </button>
+
+        {productForm.id && (
+          <button
+            type="button"
+            className="secondary-form-button"
+            onClick={() => setProductForm(emptyProduct)}
+          >
+            Cancelar edición
+          </button>
+        )}
+      </form>
+
+      <div className="staff-list">
+        {products.map((product) => (
+          <article key={product.id} className="staff-card">
+            <div className="staff-card-top">
+              <div>
+                <strong>{product.name}</strong>
+                <span>{product.category_name}</span>
+              </div>
+
+              <span className="status-pill">
+                {product.is_available ? "Disponible" : "Oculto"}
+              </span>
+            </div>
+
+            <p>{Number(product.price).toFixed(2)}€</p>
+
+            <div className="staff-actions">
+              <button type="button" onClick={() => onEditProduct(product)}>
+                <Edit size={16} />
+                Editar
+              </button>
+
+              <button type="button" onClick={() => onDeleteProduct(product.id)}>
+                <Trash2 size={16} />
+                Borrar
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StaffTimeSlotsPanel({
+  timeSlots,
+  timeSlotForm,
+  setTimeSlotForm,
+  onSubmit,
+  onEdit,
+  onDelete,
+  emptyTimeSlot,
+}) {
+  return (
+    <section>
+      <div className="section-title-row">
+        <h2>Franjas horarias</h2>
+      </div>
+
+      <form className="staff-form" onSubmit={onSubmit}>
+        <input
+          type="text"
+          placeholder="Etiqueta, ej: 11:00 - 11:30"
+          value={timeSlotForm.label}
+          onChange={(event) =>
+            setTimeSlotForm({ ...timeSlotForm, label: event.target.value })
+          }
+        />
+
+        <input
+          type="time"
+          value={timeSlotForm.start_time}
+          onChange={(event) =>
+            setTimeSlotForm({
+              ...timeSlotForm,
+              start_time: event.target.value,
+            })
+          }
+        />
+
+        <input
+          type="time"
+          value={timeSlotForm.end_time}
+          onChange={(event) =>
+            setTimeSlotForm({
+              ...timeSlotForm,
+              end_time: event.target.value,
+            })
+          }
+        />
+
+        <input
+          type="number"
+          placeholder="Máx. pedidos"
+          value={timeSlotForm.max_orders}
+          onChange={(event) =>
+            setTimeSlotForm({
+              ...timeSlotForm,
+              max_orders: event.target.value,
+            })
+          }
+        />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={timeSlotForm.is_active}
+            onChange={(event) =>
+              setTimeSlotForm({
+                ...timeSlotForm,
+                is_active: event.target.checked,
+              })
+            }
+          />
+          Activa
+        </label>
+
+        <button type="submit">
+          <Save size={16} />
+          {timeSlotForm.id ? "Actualizar franja" : "Crear franja"}
+        </button>
+
+        {timeSlotForm.id && (
+          <button
+            type="button"
+            className="secondary-form-button"
+            onClick={() => setTimeSlotForm(emptyTimeSlot)}
+          >
+            Cancelar edición
+          </button>
+        )}
+      </form>
+
+      <div className="staff-list">
+        {timeSlots.map((slot) => (
+          <article key={slot.id} className="staff-card">
+            <div className="staff-card-top">
+              <div>
+                <strong>{slot.label}</strong>
+                <span>
+                  {slot.start_time} - {slot.end_time}
+                </span>
+              </div>
+
+              <span className="status-pill">
+                {slot.is_active ? "Activa" : "Inactiva"}
+              </span>
+            </div>
+
+            <p>Máximo pedidos: {slot.max_orders}</p>
+
+            <div className="staff-actions">
+              <button type="button" onClick={() => onEdit(slot)}>
+                <Edit size={16} />
+                Editar
+              </button>
+
+              <button type="button" onClick={() => onDelete(slot.id)}>
+                <Trash2 size={16} />
+                Borrar
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -914,23 +1910,22 @@ function OrderConfirmationScreen({
         className="secondary-order-button"
         onClick={onHome}
       >
-        Volver al inicio
+        Volver a mis pedidos
       </button>
     </section>
   );
 }
 
-function BottomNav({ activeTab, setActiveTab }) {
+function BottomNav({ activeTab, onTabClick }) {
   const items = [
     { id: "home", label: "Inicio", icon: Home },
-    { id: "favorites", label: "Favoritos", icon: Heart },
     { id: "cart", label: "Carrito", icon: ShoppingCart },
     { id: "orders", label: "Pedidos", icon: ClipboardList },
     { id: "profile", label: "Perfil", icon: User },
   ];
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav four-items">
       {items.map((item) => {
         const Icon = item.icon;
 
@@ -939,7 +1934,7 @@ function BottomNav({ activeTab, setActiveTab }) {
             key={item.id}
             type="button"
             className={activeTab === item.id ? "nav-item active" : "nav-item"}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => onTabClick(item.id)}
           >
             <Icon size={20} />
             <span>{item.label}</span>
