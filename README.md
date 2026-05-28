@@ -12,8 +12,6 @@ The project also includes a private staff dashboard for cafeteria workers, where
 | Service      | URL                                                        |
 | ------------ | ---------------------------------------------------------- |
 | Frontend     | https://pio-bite.vercel.app                                |
-| Backend      | https://mellow-trust-production-4648.up.railway.app        |
-| Django Admin | https://mellow-trust-production-4648.up.railway.app/admin/ |
 
 ---
 
