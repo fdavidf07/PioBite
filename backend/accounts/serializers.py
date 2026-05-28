@@ -1,12 +1,12 @@
 """
 Serializers de usuarios para PíoBite.
 
-Este archivo transforma los usuarios de Django a JSON y permite registrar
-nuevos usuarios desde el frontend de React.
+Incluye:
+- Serializer público del usuario autenticado
+- Serializer de registro simple con usuario, email y contraseña
 """
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 
@@ -14,11 +14,7 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer para mostrar los datos básicos del usuario autenticado.
-    """
-
-    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    role_display = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -30,49 +26,47 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "role",
             "role_display",
-            "phone",
+            "is_staff",
         )
+        read_only_fields = fields
+
+    def get_role_display(self, obj):
+        if hasattr(obj, "get_role_display"):
+            return obj.get_role_display()
+
+        return getattr(obj, "role", "customer")
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """
-    Serializer para registrar nuevos alumnos/clientes.
-
-    Por seguridad, los usuarios creados desde registro serán clientes.
-    El personal de cafetería se puede crear desde el panel de administración.
-    """
-
     password = serializers.CharField(
         write_only=True,
-        required=True,
-        validators=[validate_password],
+        min_length=6,
+        style={"input_type": "password"},
     )
 
     class Meta:
         model = User
         fields = (
-            "id",
             "username",
             "email",
-            "first_name",
-            "last_name",
             "password",
-            "phone",
         )
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Ya existe una cuenta con este email.")
+
+        return value
 
     def create(self, validated_data):
-        """
-        Crea un usuario nuevo usando create_user para guardar la contraseña cifrada.
-        """
-
         user = User.objects.create_user(
             username=validated_data["username"],
-            email=validated_data.get("email", ""),
-            first_name=validated_data.get("first_name", ""),
-            last_name=validated_data.get("last_name", ""),
+            email=validated_data["email"],
             password=validated_data["password"],
-            phone=validated_data.get("phone", ""),
-            role=User.ROLE_CLIENT,
         )
+
+        if hasattr(user, "role") and not user.role:
+            user.role = "customer"
+            user.save(update_fields=["role"])
 
         return user

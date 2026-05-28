@@ -2,16 +2,17 @@
   Componente principal de PíoBite.
 
   Incluye:
-  - Login normal
-  - Registro
+  - Pantalla de inicio de sesión bien maquetada
+  - Registro simple con usuario, email y contraseña
   - Login con Google
-  - Zona cliente
+  - Zona cliente con catálogo, carrito, pagos y mis pedidos
   - Zona cafetería protegida por rol
   - Gestión de pedidos, productos, categorías y horarios
 */
 
 import { useEffect, useMemo, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
+
 import {
   clearAuthTokens,
   createOrder,
@@ -41,32 +42,31 @@ import {
 } from "./api/client";
 
 import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  Edit,
+  Home,
+  LogOut,
+  Minus,
+  Package,
+  Plus,
+  RefreshCw,
+  Save,
   Search,
   ShoppingCart,
-  Home,
-  ClipboardList,
-  User,
-  Plus,
-  Minus,
   Trash2,
-  Clock,
-  LogOut,
-  CheckCircle2,
-  ArrowLeft,
-  ShieldCheck,
-  Package,
-  Calendar,
-  Save,
-  Edit,
-  X,
-  RefreshCw,
+  User,
 } from "lucide-react";
 
 function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState("");
   const [authMode, setAuthMode] = useState("login");
+  const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
 
   const [loginForm, setLoginForm] = useState({
     username: "",
@@ -76,10 +76,7 @@ function App() {
   const [registerForm, setRegisterForm] = useState({
     username: "",
     email: "",
-    firstName: "",
-    lastName: "",
     password: "",
-    phone: "",
   });
 
   const [categories, setCategories] = useState([]);
@@ -154,6 +151,7 @@ function App() {
 
     try {
       setAuthError("");
+      setAuthSuccess("");
 
       const data = await loginWithPassword(loginForm);
       await finishLogin(data);
@@ -168,15 +166,23 @@ function App() {
 
     try {
       setAuthError("");
+      setAuthSuccess("");
 
       await registerUser(registerForm);
 
-      const data = await loginWithPassword({
+      setAuthSuccess("Cuenta creada correctamente. Ya puedes iniciar sesión.");
+      setLoginForm({
         username: registerForm.username,
-        password: registerForm.password,
+        password: "",
       });
 
-      await finishLogin(data);
+      setRegisterForm({
+        username: "",
+        email: "",
+        password: "",
+      });
+
+      setAuthMode("login");
     } catch (err) {
       console.error(err);
 
@@ -184,7 +190,8 @@ function App() {
         err.response?.data?.username?.[0] ||
         err.response?.data?.email?.[0] ||
         err.response?.data?.password?.[0] ||
-        "No se pudo registrar el usuario.";
+        err.response?.data?.detail ||
+        "No se pudo crear la cuenta.";
 
       setAuthError(backendMessage);
     }
@@ -193,6 +200,7 @@ function App() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setAuthError("");
+      setAuthSuccess("");
 
       if (!credentialResponse.credential) {
         setAuthError("Google no devolvió credenciales.");
@@ -487,8 +495,8 @@ function App() {
     return (
       <div className="app">
         <main className="phone-shell">
-          <div className="auth-screen">
-            <div className="auth-logo">P</div>
+          <div className="loading-auth">
+            <div className="auth-logo-badge">P</div>
             <h1>PíoBite</h1>
             <p>Cargando sesión...</p>
           </div>
@@ -510,6 +518,11 @@ function App() {
         onRegister={handleRegister}
         onGoogleSuccess={handleGoogleSuccess}
         authError={authError}
+        authSuccess={authSuccess}
+        clearMessages={() => {
+          setAuthError("");
+          setAuthSuccess("");
+        }}
       />
     );
   }
@@ -588,6 +601,7 @@ function App() {
                 aria-label="Abrir carrito"
               >
                 <ShoppingCart size={20} />
+
                 {cartItemsCount > 0 && (
                   <span className="cart-badge">{cartItemsCount}</span>
                 )}
@@ -676,20 +690,33 @@ function AuthScreen({
   onRegister,
   onGoogleSuccess,
   authError,
+  authSuccess,
+  clearMessages,
 }) {
   return (
     <div className="app">
-      <main className="phone-shell">
-        <div className="auth-screen">
-          <div className="auth-logo">P</div>
-          <h1>PíoBite</h1>
-          <h2>Cafetería Instituto Pío Baroja</h2>
+      <main className="phone-shell auth-phone-shell">
+        <section className="auth-panel">
+          <div className="auth-header">
+            <div className="auth-logo-badge">P</div>
 
-          <div className="auth-switch">
+            <h1>PíoBite</h1>
+            <h2>Cafetería Instituto Pío Baroja</h2>
+
+            <p>
+              Haz tus pedidos, consulta su estado y paga de forma segura con
+              Redsys TEST.
+            </p>
+          </div>
+
+          <div className="auth-tabs">
             <button
               type="button"
               className={authMode === "login" ? "active" : ""}
-              onClick={() => setAuthMode("login")}
+              onClick={() => {
+                setAuthMode("login");
+                clearMessages();
+              }}
             >
               Iniciar sesión
             </button>
@@ -697,7 +724,10 @@ function AuthScreen({
             <button
               type="button"
               className={authMode === "register" ? "active" : ""}
-              onClick={() => setAuthMode("register")}
+              onClick={() => {
+                setAuthMode("register");
+                clearMessages();
+              }}
             >
               Registrarse
             </button>
@@ -705,119 +735,121 @@ function AuthScreen({
 
           {authMode === "login" ? (
             <form className="auth-form" onSubmit={onLogin}>
-              <input
-                type="text"
-                placeholder="Usuario"
-                value={loginForm.username}
-                onChange={(event) =>
-                  setLoginForm({ ...loginForm, username: event.target.value })
-                }
-              />
+              <label>
+                Usuario
+                <input
+                  type="text"
+                  placeholder="Tu usuario"
+                  value={loginForm.username}
+                  onChange={(event) =>
+                    setLoginForm({
+                      ...loginForm,
+                      username: event.target.value,
+                    })
+                  }
+                  required
+                />
+              </label>
 
-              <input
-                type="password"
-                placeholder="Contraseña"
-                value={loginForm.password}
-                onChange={(event) =>
-                  setLoginForm({ ...loginForm, password: event.target.value })
-                }
-              />
+              <label>
+                Contraseña
+                <input
+                  type="password"
+                  placeholder="Tu contraseña"
+                  value={loginForm.password}
+                  onChange={(event) =>
+                    setLoginForm({
+                      ...loginForm,
+                      password: event.target.value,
+                    })
+                  }
+                  required
+                />
+              </label>
 
-              <button type="submit">Entrar</button>
+              <button type="submit" className="auth-primary-button">
+                Entrar
+              </button>
             </form>
           ) : (
             <form className="auth-form" onSubmit={onRegister}>
-              <input
-                type="text"
-                placeholder="Usuario"
-                value={registerForm.username}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    username: event.target.value,
-                  })
-                }
-              />
+              <label>
+                Usuario
+                <input
+                  type="text"
+                  placeholder="Elige un usuario"
+                  value={registerForm.username}
+                  onChange={(event) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      username: event.target.value,
+                    })
+                  }
+                  required
+                />
+              </label>
 
-              <input
-                type="email"
-                placeholder="Email"
-                value={registerForm.email}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    email: event.target.value,
-                  })
-                }
-              />
+              <label>
+                Email
+                <input
+                  type="email"
+                  placeholder="tuemail@ejemplo.com"
+                  value={registerForm.email}
+                  onChange={(event) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      email: event.target.value,
+                    })
+                  }
+                  required
+                />
+              </label>
 
-              <input
-                type="text"
-                placeholder="Nombre"
-                value={registerForm.firstName}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    firstName: event.target.value,
-                  })
-                }
-              />
+              <label>
+                Contraseña
+                <input
+                  type="password"
+                  placeholder="Crea una contraseña"
+                  value={registerForm.password}
+                  onChange={(event) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      password: event.target.value,
+                    })
+                  }
+                  required
+                />
+              </label>
 
-              <input
-                type="text"
-                placeholder="Apellidos"
-                value={registerForm.lastName}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    lastName: event.target.value,
-                  })
-                }
-              />
-
-              <input
-                type="password"
-                placeholder="Contraseña"
-                value={registerForm.password}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    password: event.target.value,
-                  })
-                }
-              />
-
-              <input
-                type="text"
-                placeholder="Teléfono opcional"
-                value={registerForm.phone}
-                onChange={(event) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    phone: event.target.value,
-                  })
-                }
-              />
-
-              <button type="submit">Crear cuenta</button>
+              <button type="submit" className="auth-primary-button">
+                Crear cuenta
+              </button>
             </form>
           )}
+
+          {authError && <div className="auth-message error">{authError}</div>}
+          {authSuccess && (
+            <div className="auth-message success">{authSuccess}</div>
+          )}
+
+          <div className="auth-divider">
+            <span>o continúa con</span>
+          </div>
 
           <div className="google-login-box">
             <GoogleLogin
               onSuccess={onGoogleSuccess}
               onError={() => {}}
               useOneTap={false}
+              width="100%"
             />
           </div>
 
-          {authError && <div className="auth-error">{authError}</div>}
-
-          <p className="auth-note">
+          <p className="auth-staff-note">
             El personal de cafetería debe usar una cuenta autorizada por el
             administrador.
           </p>
-        </div>
+        </section>
       </main>
     </div>
   );
@@ -946,6 +978,46 @@ function CustomerCatalog({
   );
 }
 
+function ProductCard({ product, onAdd, compact = false }) {
+  const price = Number(product.price).toFixed(2);
+
+  return (
+    <article className={compact ? "product-card compact" : "product-card"}>
+      <div className="product-image">
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.name} />
+        ) : (
+          <span>{product.category_icon || "🍽"}</span>
+        )}
+
+        {product.is_healthy && <span className="healthy-tag">Saludable</span>}
+      </div>
+
+      <div className="product-info">
+        <p className="product-category">{product.category_name}</p>
+        <h3>{product.name}</h3>
+
+        {product.description && (
+          <p className="product-description">{product.description}</p>
+        )}
+
+        <div className="product-footer">
+          <strong>{price}€</strong>
+
+          <button
+            className="add-button"
+            type="button"
+            onClick={() => onAdd(product)}
+            aria-label={`Añadir ${product.name}`}
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function CustomerOrders({ orders, loading, onRefresh }) {
   return (
     <section className="simple-screen">
@@ -976,7 +1048,9 @@ function CustomerOrders({ orders, loading, onRefresh }) {
 
               <p>
                 Pago:{" "}
-                <strong>{order.payment_status_display || order.payment_status}</strong>
+                <strong>
+                  {order.payment_status_display || order.payment_status}
+                </strong>
               </p>
 
               <p>Total: {Number(order.total_price).toFixed(2)}€</p>
@@ -1008,6 +1082,255 @@ function CustomerProfile({ authUser, onLogout }) {
   );
 }
 
+function CartDrawer({
+  cart,
+  total,
+  onClose,
+  onIncrease,
+  onDecrease,
+  onRemove,
+  onCheckout,
+}) {
+  return (
+    <div className="cart-overlay">
+      <div className="cart-drawer">
+        <div className="drawer-handle" />
+
+        <div className="cart-header">
+          <div>
+            <p>Tu pedido</p>
+            <h2>Carrito</h2>
+          </div>
+
+          <button type="button" onClick={onClose} className="close-button">
+            Cerrar
+          </button>
+        </div>
+
+        {cart.length === 0 ? (
+          <div className="empty-cart">
+            <ShoppingCart size={34} />
+            <h3>Tu carrito está vacío</h3>
+            <p>Añade productos desde el catálogo para empezar tu pedido.</p>
+          </div>
+        ) : (
+          <>
+            <div className="cart-items">
+              {cart.map((item) => (
+                <div key={item.product.id} className="cart-item">
+                  <div className="cart-item-icon">
+                    {item.product.category_icon || "🍽"}
+                  </div>
+
+                  <div className="cart-item-info">
+                    <h3>{item.product.name}</h3>
+                    <p>{Number(item.product.price).toFixed(2)}€</p>
+
+                    <div className="quantity-controls">
+                      <button
+                        type="button"
+                        onClick={() => onDecrease(item.product.id)}
+                      >
+                        <Minus size={14} />
+                      </button>
+
+                      <span>{item.quantity}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => onIncrease(item.product.id)}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    className="delete-button"
+                    type="button"
+                    onClick={() => onRemove(item.product.id)}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="cart-total">
+              <div>
+                <span>Total</span>
+                <strong>{total.toFixed(2)}€</strong>
+              </div>
+
+              <button
+                type="button"
+                className="checkout-button"
+                onClick={onCheckout}
+              >
+                Elegir horario
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutTimeSlotScreen({
+  cart,
+  total,
+  timeSlots,
+  selectedTimeSlot,
+  setSelectedTimeSlot,
+  onBack,
+  onConfirm,
+  loading,
+  error,
+}) {
+  return (
+    <>
+      <header className="checkout-header">
+        <button className="back-button" type="button" onClick={onBack}>
+          <ArrowLeft size={19} />
+        </button>
+
+        <div>
+          <p>Finalizar pedido</p>
+          <h1>Elige tu horario</h1>
+        </div>
+      </header>
+
+      <section className="content checkout-content">
+        <div className="checkout-card">
+          <h2>Resumen</h2>
+
+          <div className="checkout-items">
+            {cart.map((item) => (
+              <div key={item.product.id} className="checkout-item">
+                <span>
+                  {item.quantity}x {item.product.name}
+                </span>
+                <strong>
+                  {(Number(item.product.price) * item.quantity).toFixed(2)}€
+                </strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="checkout-total-line">
+            <span>Total</span>
+            <strong>{total.toFixed(2)}€</strong>
+          </div>
+        </div>
+
+        <div className="checkout-card">
+          <h2>Franjas disponibles</h2>
+
+          <div className="checkout-timeslots">
+            {timeSlots.map((slot) => (
+              <button
+                key={slot.id}
+                type="button"
+                disabled={slot.is_full}
+                className={
+                  selectedTimeSlot?.id === slot.id
+                    ? "checkout-slot selected"
+                    : "checkout-slot"
+                }
+                onClick={() => setSelectedTimeSlot(slot)}
+              >
+                <Clock size={18} />
+                <span>{slot.label}</span>
+                <small>{slot.is_full ? "Completo" : "Disponible"}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && <div className="error-box">{error}</div>}
+
+        <button
+          type="button"
+          className="confirm-order-button"
+          onClick={onConfirm}
+          disabled={loading}
+        >
+          {loading ? "Creando pedido..." : "Confirmar pedido"}
+        </button>
+      </section>
+    </>
+  );
+}
+
+function OrderConfirmationScreen({
+  order,
+  onHome,
+  onPay,
+  paymentLoading,
+  paymentError,
+}) {
+  return (
+    <section className="confirmation-screen">
+      <div className="confirmation-icon">
+        <CheckCircle2 size={40} />
+      </div>
+
+      <h1>¡Pedido creado!</h1>
+      <p>
+        Tu pedido ya está registrado. Ahora realiza el pago en Redsys TEST para
+        confirmarlo.
+      </p>
+
+      <div className="order-code-card">
+        <span>Código de pedido</span>
+        <strong>{order.code}</strong>
+      </div>
+
+      <div className="confirmation-card">
+        <div>
+          <span>Estado pedido</span>
+          <strong>{order.status_display}</strong>
+        </div>
+
+        <div>
+          <span>Estado pago</span>
+          <strong>{order.payment_status_display || "Pendiente de pago"}</strong>
+        </div>
+
+        <div>
+          <span>Recogida</span>
+          <strong>{order.time_slot?.label}</strong>
+        </div>
+
+        <div>
+          <span>Total</span>
+          <strong>{Number(order.total_price).toFixed(2)}€</strong>
+        </div>
+      </div>
+
+      {paymentError && <div className="error-box">{paymentError}</div>}
+
+      <button
+        type="button"
+        className="confirm-order-button"
+        onClick={onPay}
+        disabled={paymentLoading}
+      >
+        {paymentLoading ? "Preparando Redsys..." : "Pagar con Redsys TEST"}
+      </button>
+
+      <button
+        type="button"
+        className="secondary-order-button"
+        onClick={onHome}
+      >
+        Volver a mis pedidos
+      </button>
+    </section>
+  );
+}
+
 function StaffPanel({ authUser, onLogout }) {
   const [staffTab, setStaffTab] = useState("orders");
   const [loading, setLoading] = useState(false);
@@ -1019,6 +1342,7 @@ function StaffPanel({ authUser, onLogout }) {
   const [timeSlots, setTimeSlots] = useState([]);
 
   const emptyCategory = { id: null, name: "", icon: "" };
+
   const emptyProduct = {
     id: null,
     name: "",
@@ -1029,6 +1353,7 @@ function StaffPanel({ authUser, onLogout }) {
     is_healthy: false,
     is_popular: false,
   };
+
   const emptyTimeSlot = {
     id: null,
     label: "",
@@ -1317,6 +1642,7 @@ function StaffProductsPanel({
           onChange={(event) =>
             setCategoryForm({ ...categoryForm, name: event.target.value })
           }
+          required
         />
 
         <input
@@ -1376,6 +1702,7 @@ function StaffProductsPanel({
           onChange={(event) =>
             setProductForm({ ...productForm, name: event.target.value })
           }
+          required
         />
 
         <textarea
@@ -1394,6 +1721,7 @@ function StaffProductsPanel({
           onChange={(event) =>
             setProductForm({ ...productForm, price: event.target.value })
           }
+          required
         />
 
         <select
@@ -1401,8 +1729,10 @@ function StaffProductsPanel({
           onChange={(event) =>
             setProductForm({ ...productForm, category: event.target.value })
           }
+          required
         >
           <option value="">Selecciona categoría</option>
+
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.icon} {category.name}
@@ -1525,6 +1855,7 @@ function StaffTimeSlotsPanel({
           onChange={(event) =>
             setTimeSlotForm({ ...timeSlotForm, label: event.target.value })
           }
+          required
         />
 
         <input
@@ -1536,6 +1867,7 @@ function StaffTimeSlotsPanel({
               start_time: event.target.value,
             })
           }
+          required
         />
 
         <input
@@ -1547,6 +1879,7 @@ function StaffTimeSlotsPanel({
               end_time: event.target.value,
             })
           }
+          required
         />
 
         <input
@@ -1559,6 +1892,7 @@ function StaffTimeSlotsPanel({
               max_orders: event.target.value,
             })
           }
+          required
         />
 
         <label>
@@ -1623,295 +1957,6 @@ function StaffTimeSlotsPanel({
           </article>
         ))}
       </div>
-    </section>
-  );
-}
-
-function ProductCard({ product, onAdd, compact = false }) {
-  const price = Number(product.price).toFixed(2);
-
-  return (
-    <article className={compact ? "product-card compact" : "product-card"}>
-      <div className="product-image">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} />
-        ) : (
-          <span>{product.category_icon || "🍽"}</span>
-        )}
-
-        {product.is_healthy && <span className="healthy-tag">Saludable</span>}
-      </div>
-
-      <div className="product-info">
-        <p className="product-category">{product.category_name}</p>
-        <h3>{product.name}</h3>
-
-        {product.description && (
-          <p className="product-description">{product.description}</p>
-        )}
-
-        <div className="product-footer">
-          <strong>{price}€</strong>
-
-          <button
-            className="add-button"
-            type="button"
-            onClick={() => onAdd(product)}
-            aria-label={`Añadir ${product.name}`}
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function CartDrawer({
-  cart,
-  total,
-  onClose,
-  onIncrease,
-  onDecrease,
-  onRemove,
-  onCheckout,
-}) {
-  return (
-    <div className="cart-overlay">
-      <div className="cart-drawer">
-        <div className="drawer-handle" />
-
-        <div className="cart-header">
-          <div>
-            <p>Tu pedido</p>
-            <h2>Carrito</h2>
-          </div>
-
-          <button type="button" onClick={onClose} className="close-button">
-            Cerrar
-          </button>
-        </div>
-
-        {cart.length === 0 ? (
-          <div className="empty-cart">
-            <ShoppingCart size={34} />
-            <h3>Tu carrito está vacío</h3>
-            <p>Añade productos desde el catálogo para empezar tu pedido.</p>
-          </div>
-        ) : (
-          <>
-            <div className="cart-items">
-              {cart.map((item) => (
-                <div key={item.product.id} className="cart-item">
-                  <div className="cart-item-icon">
-                    {item.product.category_icon || "🍽"}
-                  </div>
-
-                  <div className="cart-item-info">
-                    <h3>{item.product.name}</h3>
-                    <p>{Number(item.product.price).toFixed(2)}€</p>
-
-                    <div className="quantity-controls">
-                      <button
-                        type="button"
-                        onClick={() => onDecrease(item.product.id)}
-                      >
-                        <Minus size={14} />
-                      </button>
-
-                      <span>{item.quantity}</span>
-
-                      <button
-                        type="button"
-                        onClick={() => onIncrease(item.product.id)}
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    className="delete-button"
-                    type="button"
-                    onClick={() => onRemove(item.product.id)}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="cart-total">
-              <div>
-                <span>Total</span>
-                <strong>{total.toFixed(2)}€</strong>
-              </div>
-
-              <button
-                type="button"
-                className="checkout-button"
-                onClick={onCheckout}
-              >
-                Elegir horario
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CheckoutTimeSlotScreen({
-  cart,
-  total,
-  timeSlots,
-  selectedTimeSlot,
-  setSelectedTimeSlot,
-  onBack,
-  onConfirm,
-  loading,
-  error,
-}) {
-  return (
-    <>
-      <header className="checkout-header">
-        <button className="back-button" type="button" onClick={onBack}>
-          <ArrowLeft size={19} />
-        </button>
-
-        <div>
-          <p>Finalizar pedido</p>
-          <h1>Elige tu horario</h1>
-        </div>
-      </header>
-
-      <section className="content checkout-content">
-        <div className="checkout-card">
-          <h2>Resumen</h2>
-
-          <div className="checkout-items">
-            {cart.map((item) => (
-              <div key={item.product.id} className="checkout-item">
-                <span>
-                  {item.quantity}x {item.product.name}
-                </span>
-                <strong>
-                  {(Number(item.product.price) * item.quantity).toFixed(2)}€
-                </strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="checkout-total-line">
-            <span>Total</span>
-            <strong>{total.toFixed(2)}€</strong>
-          </div>
-        </div>
-
-        <div className="checkout-card">
-          <h2>Franjas disponibles</h2>
-
-          <div className="checkout-timeslots">
-            {timeSlots.map((slot) => (
-              <button
-                key={slot.id}
-                type="button"
-                disabled={slot.is_full}
-                className={
-                  selectedTimeSlot?.id === slot.id
-                    ? "checkout-slot selected"
-                    : "checkout-slot"
-                }
-                onClick={() => setSelectedTimeSlot(slot)}
-              >
-                <Clock size={18} />
-                <span>{slot.label}</span>
-                <small>{slot.is_full ? "Completo" : "Disponible"}</small>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {error && <div className="error-box">{error}</div>}
-
-        <button
-          type="button"
-          className="confirm-order-button"
-          onClick={onConfirm}
-          disabled={loading}
-        >
-          {loading ? "Creando pedido..." : "Confirmar pedido"}
-        </button>
-      </section>
-    </>
-  );
-}
-
-function OrderConfirmationScreen({
-  order,
-  onHome,
-  onPay,
-  paymentLoading,
-  paymentError,
-}) {
-  return (
-    <section className="confirmation-screen">
-      <div className="confirmation-icon">
-        <CheckCircle2 size={40} />
-      </div>
-
-      <h1>¡Pedido creado!</h1>
-      <p>
-        Tu pedido ya está registrado. Ahora realiza el pago en Redsys TEST para
-        confirmarlo.
-      </p>
-
-      <div className="order-code-card">
-        <span>Código de pedido</span>
-        <strong>{order.code}</strong>
-      </div>
-
-      <div className="confirmation-card">
-        <div>
-          <span>Estado pedido</span>
-          <strong>{order.status_display}</strong>
-        </div>
-
-        <div>
-          <span>Estado pago</span>
-          <strong>{order.payment_status_display || "Pendiente de pago"}</strong>
-        </div>
-
-        <div>
-          <span>Recogida</span>
-          <strong>{order.time_slot?.label}</strong>
-        </div>
-
-        <div>
-          <span>Total</span>
-          <strong>{Number(order.total_price).toFixed(2)}€</strong>
-        </div>
-      </div>
-
-      {paymentError && <div className="error-box">{paymentError}</div>}
-
-      <button
-        type="button"
-        className="confirm-order-button"
-        onClick={onPay}
-        disabled={paymentLoading}
-      >
-        {paymentLoading ? "Preparando Redsys..." : "Pagar con Redsys TEST"}
-      </button>
-
-      <button
-        type="button"
-        className="secondary-order-button"
-        onClick={onHome}
-      >
-        Volver a mis pedidos
-      </button>
     </section>
   );
 }

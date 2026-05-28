@@ -1,9 +1,11 @@
 """
-Rutas de usuarios y autenticación de PíoBite.
+Rutas de autenticación de PíoBite.
 """
 
 from django.urls import path
+
 from .views import RegisterView, MeView, GoogleLoginView
+
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
