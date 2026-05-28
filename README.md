@@ -1,21 +1,22 @@
 # PíoBite
 
-**PíoBite** is a full-stack web application developed for the cafeteria of **IES Pío Baroja**.
-The platform allows students, teachers and staff to order cafeteria products online, pay through a Redsys test payment gateway, and track the status of their orders in real time.
+**PíoBite** es una aplicación web full-stack desarrollada para la cafetería del **IES Pío Baroja**.
 
-The project also includes a private staff dashboard for cafeteria workers, where authorized users can manage products, categories, pickup time slots and customer orders.
+La plataforma permite a estudiantes, profesores y personal del centro realizar pedidos online, seleccionar una franja horaria de recogida, pagar mediante el entorno de pruebas de **Redsys** y consultar el estado de sus pedidos.
 
----
-
-## Live Demo
-
-| Service      | URL                                                        |
-| ------------ | ---------------------------------------------------------- |
-| Frontend     | https://pio-bite.vercel.app                                |
+Además, incluye un panel privado para el personal de cafetería, desde el que los usuarios autorizados pueden gestionar productos, categorías, horarios y pedidos.
 
 ---
 
-## Repository
+## Demo en producción
+
+| Servicio                       | URL                                                        |
+| ------------------------------ | ---------------------------------------------------------- |
+| Frontend                       | https://pio-bite.vercel.app                                |
+
+---
+
+## Repositorio
 
 ```text
 https://github.com/fdavidf07/PioBite
@@ -23,178 +24,190 @@ https://github.com/fdavidf07/PioBite
 
 ---
 
-## Project Overview
+## Descripción general del proyecto
 
-PíoBite solves a common problem in school cafeterias: long queues, unclear order status and manual order management.
+PíoBite nace como solución digital para mejorar la gestión de pedidos en una cafetería de instituto.
 
-The application provides two main experiences:
+El objetivo principal es evitar colas, organizar mejor los pedidos, facilitar el pago y permitir que el personal de cafetería tenga una herramienta clara para gestionar el servicio diario.
 
-### Customer Area
-
-Regular users can:
-
-* Register with username, email and password.
-* Log in with username and password.
-* Log in using Google OAuth.
-* Browse the product catalogue.
-* Filter products by category.
-* Add products to a cart.
-* Select a pickup time slot.
-* Create an order.
-* Pay using Redsys test environment.
-* View their previous orders.
-* Track the status of each order.
-
-### Cafeteria Staff Area
-
-Authorized cafeteria users can:
-
-* Access a private staff dashboard.
-* View all customer orders.
-* Change order status.
-* Manage product categories.
-* Create, edit and delete products.
-* Mark products as available, healthy or popular.
-* Create, edit and delete pickup time slots.
-* Control which products and time slots are visible to customers.
+La aplicación está dividida en dos áreas principales:
 
 ---
 
-## Main Features
+## Área de cliente
 
-### Authentication
+Los usuarios normales pueden:
 
-* JWT authentication with Django REST Framework Simple JWT.
-* Google OAuth login.
-* Regular username/password login.
-* User registration.
-* Role-based access control.
-* Separate customer and cafeteria staff experiences.
-
-### Product Catalogue
-
-* Product listing.
-* Product categories.
-* Popular products section.
-* Product availability control.
-* Healthy product label.
-* Mobile-first responsive layout.
-
-### Cart and Checkout
-
-* Add products to cart.
-* Increase/decrease quantities.
-* Remove products from cart.
-* Calculate total price automatically.
-* Choose pickup time slot.
-* Create a persistent order in the backend.
-
-### Payments
-
-* Redsys test gateway integration.
-* Secure payment parameter generation from Django.
-* Payment notification endpoint.
-* Automatic payment status update.
-* Test card support.
-* No real money is charged.
-
-### Customer Orders
-
-* Customer order history.
-* Order status tracking.
-* Payment status tracking.
-* Order code display.
-
-### Staff Dashboard
-
-* Staff-only access.
-* Daily order management.
-* Order status update.
-* Product management.
-* Category management.
-* Pickup time slot management.
-
-### Deployment
-
-* Frontend deployed on Vercel.
-* Backend deployed on Railway.
-* PostgreSQL database hosted on Railway.
-* Environment-based configuration.
-* Production-ready CORS and CSRF configuration.
+* Registrarse con usuario, email y contraseña.
+* Iniciar sesión con usuario y contraseña.
+* Iniciar sesión con Google.
+* Ver el catálogo de productos.
+* Filtrar productos por categoría.
+* Añadir productos al carrito.
+* Modificar cantidades dentro del carrito.
+* Seleccionar una franja horaria de recogida.
+* Crear un pedido.
+* Realizar un pago con Redsys en entorno de pruebas.
+* Consultar sus pedidos.
+* Ver el estado de preparación y pago de cada pedido.
 
 ---
 
-## Tech Stack
+## Área de personal de cafetería
+
+Los usuarios autorizados como personal de cafetería pueden:
+
+* Acceder a un panel privado.
+* Ver todos los pedidos recibidos.
+* Cambiar el estado de los pedidos.
+* Crear, editar y eliminar categorías.
+* Crear, editar y eliminar productos.
+* Activar o desactivar productos.
+* Marcar productos como populares o saludables.
+* Crear, editar y eliminar franjas horarias.
+* Gestionar la disponibilidad de horarios.
+* Controlar el funcionamiento diario de la cafetería.
+
+---
+
+## Funcionalidades principales
+
+### Autenticación
+
+* Registro de usuarios.
+* Inicio de sesión con usuario y contraseña.
+* Inicio de sesión con Google OAuth.
+* Autenticación mediante JWT.
+* Control de acceso por roles.
+* Diferenciación entre usuario cliente y personal de cafetería.
+* Acceso protegido al panel privado de cafetería.
+
+---
+
+### Catálogo de productos
+
+* Listado de productos disponibles.
+* Organización por categorías.
+* Sección de productos populares.
+* Etiqueta para productos saludables.
+* Control de disponibilidad de productos.
+* Diseño responsive y mobile first.
+
+---
+
+### Carrito y pedidos
+
+* Añadir productos al carrito.
+* Aumentar o disminuir cantidades.
+* Eliminar productos del carrito.
+* Cálculo automático del total.
+* Selección de franja horaria.
+* Creación de pedidos persistentes en base de datos.
+* Generación de código de pedido.
+
+---
+
+### Pagos con Redsys
+
+* Integración con Redsys en entorno de pruebas.
+* Simulación de pago real sin realizar cobros.
+* Generación segura de parámetros de pago desde Django.
+* Redirección a Redsys.
+* Recepción de notificación de pago.
+* Actualización automática del estado del pedido.
+* Soporte para tarjetas de prueba.
+
+---
+
+### Mis pedidos
+
+* Historial de pedidos del usuario.
+* Visualización del código de pedido.
+* Estado del pedido.
+* Estado del pago.
+* Total del pedido.
+* Franja horaria seleccionada.
+
+---
+
+### Panel de cafetería
+
+* Acceso solo para usuarios autorizados.
+* Gestión completa de pedidos.
+* Cambio de estado de pedidos.
+* Gestión de productos.
+* Gestión de categorías.
+* Gestión de franjas horarias.
+* Panel adaptado a móvil.
+
+---
+
+## Tecnologías utilizadas
 
 ### Frontend
 
-| Technology   | Purpose                           |
-| ------------ | --------------------------------- |
-| React        | User interface                    |
-| Vite         | Frontend tooling and build system |
-| Axios        | HTTP requests                     |
-| Lucide React | Icons                             |
-| CSS          | Custom responsive styling         |
-| Google OAuth | Google login                      |
-
-### Backend
-
-| Technology            | Purpose                      |
-| --------------------- | ---------------------------- |
-| Django                | Backend framework            |
-| Django REST Framework | REST API                     |
-| Simple JWT            | Token authentication         |
-| PostgreSQL            | Production database          |
-| SQLite                | Local development database   |
-| Redsys                | Test payment gateway         |
-| WhiteNoise            | Static files in production   |
-| Gunicorn              | Production WSGI server       |
-| Railway               | Backend and database hosting |
-
-### Deployment
-
-| Platform           | Purpose                               |
-| ------------------ | ------------------------------------- |
-| Vercel             | Frontend hosting                      |
-| Railway            | Backend hosting                       |
-| Railway PostgreSQL | Production database                   |
-| GitHub             | Version control and deployment source |
+| Tecnología        | Uso                           |
+| ----------------- | ----------------------------- |
+| React             | Interfaz de usuario           |
+| Vite              | Entorno de desarrollo y build |
+| Axios             | Peticiones HTTP al backend    |
+| Lucide React      | Iconos                        |
+| CSS personalizado | Diseño responsive             |
+| Google OAuth      | Inicio de sesión con Google   |
+| Vercel            | Despliegue del frontend       |
 
 ---
 
-## Architecture
+### Backend
+
+| Tecnología            | Uso                                    |
+| --------------------- | -------------------------------------- |
+| Django                | Framework backend                      |
+| Django REST Framework | API REST                               |
+| Simple JWT            | Autenticación mediante tokens          |
+| PostgreSQL            | Base de datos en producción            |
+| SQLite                | Base de datos en desarrollo local      |
+| Redsys                | Pasarela de pago en pruebas            |
+| Gunicorn              | Servidor WSGI en producción            |
+| WhiteNoise            | Gestión de archivos estáticos          |
+| Railway               | Despliegue del backend y base de datos |
+
+---
+
+## Arquitectura del sistema
 
 ```text
 PíoBite
 │
 ├── Frontend - React / Vite
-│   ├── Login and registration
-│   ├── Google authentication
-│   ├── Customer catalogue
-│   ├── Cart and checkout
-│   ├── Customer orders
-│   └── Staff dashboard
+│   ├── Login y registro
+│   ├── Login con Google
+│   ├── Catálogo de productos
+│   ├── Carrito
+│   ├── Checkout
+│   ├── Mis pedidos
+│   └── Panel de cafetería
 │
 ├── Backend - Django / DRF
-│   ├── Authentication API
-│   ├── Catalogue API
-│   ├── Orders API
-│   ├── Payments API
-│   ├── Staff management API
-│   └── Admin panel
+│   ├── API de autenticación
+│   ├── API de catálogo
+│   ├── API de pedidos
+│   ├── API de pagos
+│   ├── API privada para cafetería
+│   └── Panel de administración
 │
-└── Database - PostgreSQL
-    ├── Users
-    ├── Products
-    ├── Categories
-    ├── Orders
-    ├── Order items
-    └── Time slots
+└── Base de datos - PostgreSQL
+    ├── Usuarios
+    ├── Categorías
+    ├── Productos
+    ├── Franjas horarias
+    ├── Pedidos
+    └── Líneas de pedido
 ```
 
 ---
 
-## Folder Structure
+## Estructura del proyecto
 
 ```text
 PioBite/
@@ -251,121 +264,128 @@ PioBite/
 
 ---
 
-## User Roles
+## Roles de usuario
 
-The application uses role-based logic to separate normal users from cafeteria staff.
+La aplicación utiliza un sistema de roles para separar los permisos de cada tipo de usuario.
 
-| Role     | Description          | Access                                    |
-| -------- | -------------------- | ----------------------------------------- |
-| Customer | Regular user         | Catalogue, cart, orders and payments      |
-| Staff    | Cafeteria worker     | Staff dashboard and management tools      |
-| Admin    | Django administrator | Django admin panel and full system access |
+| Rol                | Descripción         | Permisos                                            |
+| ------------------ | ------------------- | --------------------------------------------------- |
+| Cliente            | Usuario normal      | Comprar productos, pagar y ver sus pedidos          |
+| Personal cafetería | Usuario autorizado  | Gestionar pedidos, productos, categorías y horarios |
+| Administrador      | Superusuario Django | Acceso completo al panel de administración          |
 
-A cafeteria user should not be publicly registered as staff.
-Staff users must be created or authorized from the Django admin panel.
+Los usuarios de cafetería no se registran públicamente como personal.
+Deben ser creados o autorizados desde el panel de administración de Django.
 
 ---
 
-## Order Flow
+## Flujo de pedido
 
 ```text
-Customer logs in
+Usuario inicia sesión
 ↓
-Customer selects products
+Selecciona productos
 ↓
-Customer adds products to cart
+Añade productos al carrito
 ↓
-Customer chooses pickup time slot
+Elige una franja horaria
 ↓
-Order is created in Django
+Crea el pedido
 ↓
-Customer pays through Redsys TEST
+Realiza el pago con Redsys TEST
 ↓
-Redsys notifies the backend
+Redsys notifica al backend
 ↓
-Payment status is updated
+El pedido cambia a pagado
 ↓
-Staff prepares the order
+El personal de cafetería prepara el pedido
 ↓
-Customer sees updated order status
+El cliente consulta el estado actualizado
 ```
 
 ---
 
-## Staff Flow
+## Flujo del personal de cafetería
 
 ```text
-Staff user logs in
+Usuario autorizado inicia sesión
 ↓
-Application detects staff role
+La app detecta que es personal de cafetería
 ↓
-Staff dashboard is displayed
+Se muestra el panel privado
 ↓
-Staff can view orders
+El personal ve los pedidos recibidos
 ↓
-Staff can update order status
+Puede cambiar el estado de los pedidos
 ↓
-Staff can manage products, categories and time slots
+Puede gestionar productos, categorías y horarios
 ```
 
 ---
 
-## Order Statuses
+## Estados de pedido
 
-| Status    | Meaning                          |
-| --------- | -------------------------------- |
-| Pending   | Order has been created           |
-| Preparing | Cafeteria is preparing the order |
-| Ready     | Order is ready for pickup        |
-| Delivered | Order has been delivered         |
-| Cancelled | Order has been cancelled         |
-
----
-
-## Payment Statuses
-
-| Status  | Meaning                            |
-| ------- | ---------------------------------- |
-| Pending | Payment has not been completed yet |
-| Paid    | Payment was completed successfully |
-| Failed  | Payment failed or was rejected     |
+| Estado     | Significado                            |
+| ---------- | -------------------------------------- |
+| Pendiente  | El pedido ha sido creado               |
+| Preparando | La cafetería está preparando el pedido |
+| Listo      | El pedido está listo para recoger      |
+| Entregado  | El pedido ya ha sido entregado         |
+| Cancelado  | El pedido ha sido cancelado            |
 
 ---
 
-## Redsys Test Payment
+## Estados de pago
 
-The project uses Redsys in test mode.
-This means that the payment flow behaves like a real card payment, but no real money is charged.
+| Estado    | Significado                            |
+| --------- | -------------------------------------- |
+| Pendiente | El pago todavía no se ha completado    |
+| Pagado    | El pago se ha realizado correctamente  |
+| Fallido   | El pago ha fallado o ha sido rechazado |
 
-Example Redsys test card:
+---
+
+## Redsys en modo prueba
+
+La aplicación utiliza Redsys en entorno de pruebas.
+
+Esto permite simular un pago real con tarjeta, pero sin realizar ningún cobro real.
+
+Tarjeta de prueba Redsys:
 
 ```text
-Card number: 4548810000000003
-Expiry date: 12/49
+Número: 4548810000000003
+Caducidad: 12/49
 CVV: 123
 ```
 
-The Redsys credentials are stored only in backend environment variables and must never be committed to GitHub.
+Las credenciales de Redsys se almacenan únicamente en variables de entorno del backend y nunca deben subirse al repositorio.
 
 ---
 
-## Environment Variables
+## Variables de entorno
 
-### Backend Environment Variables
+### Backend local
 
-Create a `.env` file inside the `backend/` folder for local development.
+Crear un archivo:
+
+```text
+backend/.env
+```
+
+Ejemplo:
 
 ```env
-DJANGO_SECRET_KEY=your_django_secret_key
+DJANGO_SECRET_KEY=tu_clave_secreta_django
 DEBUG=True
 
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 
-REDSYS_MERCHANT_CODE=your_redsys_merchant_code
-REDSYS_TERMINAL=your_redsys_terminal
+REDSYS_MERCHANT_CODE=tu_codigo_comercio
+REDSYS_TERMINAL=tu_terminal
 REDSYS_CURRENCY=978
 REDSYS_TRANSACTION_TYPE=0
-REDSYS_SECRET_KEY=your_redsys_secret_key
+REDSYS_SECRET_KEY=tu_clave_redsys
 REDSYS_URL=https://sis-t.redsys.es:25443/sis/realizarPago
 REDSYS_SIGNATURE_VERSION=HMAC_SHA512_V2
 
@@ -377,21 +397,25 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-For Railway production:
+---
+
+### Backend en Railway
+
+Variables configuradas en Railway:
 
 ```env
-DJANGO_SECRET_KEY=your_production_secret_key
+DJANGO_SECRET_KEY=tu_clave_secreta_produccion
 DEBUG=False
 
-DATABASE_URL=your_railway_postgresql_url
+DATABASE_URL=variable_de_postgresql_railway
 
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 
-REDSYS_MERCHANT_CODE=your_redsys_merchant_code
-REDSYS_TERMINAL=your_redsys_terminal
+REDSYS_MERCHANT_CODE=tu_codigo_comercio
+REDSYS_TERMINAL=tu_terminal
 REDSYS_CURRENCY=978
 REDSYS_TRANSACTION_TYPE=0
-REDSYS_SECRET_KEY=your_redsys_secret_key
+REDSYS_SECRET_KEY=tu_clave_redsys
 REDSYS_URL=https://sis-t.redsys.es:25443/sis/realizarPago
 REDSYS_SIGNATURE_VERSION=HMAC_SHA512_V2
 
@@ -403,27 +427,39 @@ CORS_ALLOWED_ORIGINS=https://pio-bite.vercel.app,http://localhost:5173,http://12
 CSRF_TRUSTED_ORIGINS=https://mellow-trust-production-4648.up.railway.app,https://pio-bite.vercel.app,http://localhost:5173,http://127.0.0.1:5173
 ```
 
-### Frontend Environment Variables
+---
 
-Create a `.env` file inside the `frontend/` folder.
+### Frontend local
+
+Crear un archivo:
+
+```text
+frontend/.env
+```
+
+Ejemplo:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-For production on Vercel:
+---
+
+### Frontend en Vercel
+
+Variables configuradas en Vercel:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 VITE_API_BASE_URL=https://mellow-trust-production-4648.up.railway.app
 ```
 
 ---
 
-## Local Installation
+## Instalación local
 
-### 1. Clone the repository
+### 1. Clonar el repositorio
 
 ```bash
 git clone https://github.com/fdavidf07/PioBite.git
@@ -432,68 +468,75 @@ cd PioBite
 
 ---
 
-## Backend Setup
+## Configuración del backend
 
-### 2. Create and activate virtual environment
+### 2. Entrar en la carpeta del backend
 
 ```bash
 cd backend
+```
+
+### 3. Crear entorno virtual
+
+```bash
 python -m venv .venv
 ```
 
-On Windows:
+### 4. Activar entorno virtual
+
+En Windows:
 
 ```bash
 .venv\Scripts\activate
 ```
 
-On macOS/Linux:
+En macOS/Linux:
 
 ```bash
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 5. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 6. Configurar variables de entorno
 
-Create:
+Crear el archivo:
 
 ```text
 backend/.env
 ```
 
-Add the backend environment variables shown above.
+Añadir las variables correspondientes.
 
-### 5. Run migrations
+### 7. Ejecutar migraciones
 
 ```bash
 python manage.py migrate
 ```
 
-### 6. Create superuser
+### 8. Crear superusuario
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### 7. Start backend server
+### 9. Arrancar servidor backend
 
 ```bash
 python manage.py runserver
 ```
 
-Backend will run on:
+Backend local:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Django admin:
+Admin local:
 
 ```text
 http://127.0.0.1:8000/admin/
@@ -501,39 +544,44 @@ http://127.0.0.1:8000/admin/
 
 ---
 
-## Frontend Setup
+## Configuración del frontend
 
-### 8. Install frontend dependencies
+### 10. Entrar en la carpeta del frontend
 
-Open a second terminal:
+En otra terminal:
 
 ```bash
 cd frontend
+```
+
+### 11. Instalar dependencias
+
+```bash
 npm install
 ```
 
-### 9. Configure frontend environment variables
+### 12. Configurar variables de entorno
 
-Create:
+Crear el archivo:
 
 ```text
 frontend/.env
 ```
 
-Add:
+Añadir:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-### 10. Start frontend server
+### 13. Arrancar servidor frontend
 
 ```bash
 npm run dev
 ```
 
-Frontend will run on:
+Frontend local:
 
 ```text
 http://localhost:5173
@@ -541,13 +589,11 @@ http://localhost:5173
 
 ---
 
-## Production Deployment
+## Despliegue en producción
 
-### Frontend Deployment
+### Frontend en Vercel
 
-The frontend is deployed on Vercel.
-
-Recommended Vercel settings:
+Configuración recomendada:
 
 ```text
 Framework Preset: Vite
@@ -557,46 +603,49 @@ Output Directory: dist
 Install Command: npm install
 ```
 
-Required Vercel environment variables:
+Variables necesarias:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=tu_google_client_id.apps.googleusercontent.com
 VITE_API_BASE_URL=https://mellow-trust-production-4648.up.railway.app
 ```
 
 ---
 
-### Backend Deployment
+### Backend en Railway
 
-The backend is deployed on Railway.
-
-Recommended Railway settings:
+Configuración recomendada:
 
 ```text
 Root Directory: backend
-Start Command: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
-The `Procfile` should contain:
+Comando de arranque:
+
+```text
+python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+El archivo `Procfile` contiene:
 
 ```text
 web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
-Railway services:
+Servicios en Railway:
 
 ```text
-Backend Django service
-PostgreSQL database service
+Backend Django
+PostgreSQL
 ```
 
 ---
 
-## Google OAuth Configuration
+## Configuración de Google OAuth
 
-In Google Cloud Console, configure the OAuth client.
+En Google Cloud Console, configurar el cliente OAuth de tipo web.
 
-Authorized JavaScript origins:
+Orígenes autorizados de JavaScript:
 
 ```text
 http://localhost:5173
@@ -604,164 +653,176 @@ http://127.0.0.1:5173
 https://pio-bite.vercel.app
 ```
 
-The same Google Client ID must be added to:
+El mismo Google Client ID debe estar configurado en:
 
 ```text
 frontend/.env
-Vercel environment variables
+Variables de entorno de Vercel
 backend/.env
-Railway environment variables
+Variables de entorno de Railway
 ```
 
 ---
 
-## Main API Endpoints
+## Endpoints principales de la API
 
-### Authentication
+### Autenticación
 
-| Method | Endpoint              | Description                      |
-| ------ | --------------------- | -------------------------------- |
-| POST   | `/api/auth/register/` | Register a new user              |
-| POST   | `/api/auth/login/`    | Login with username and password |
-| POST   | `/api/auth/google/`   | Login with Google                |
-| GET    | `/api/auth/me/`       | Get authenticated user           |
-
-### Catalogue
-
-| Method | Endpoint                 | Description           |
-| ------ | ------------------------ | --------------------- |
-| GET    | `/api/categories/`       | List categories       |
-| GET    | `/api/products/`         | List products         |
-| GET    | `/api/products/popular/` | List popular products |
-
-### Orders
-
-| Method | Endpoint                 | Description              |
-| ------ | ------------------------ | ------------------------ |
-| GET    | `/api/timeslots/`        | List active time slots   |
-| POST   | `/api/orders/`           | Create order             |
-| GET    | `/api/orders/my-orders/` | List current user orders |
-
-### Payments
-
-| Method | Endpoint                             | Description                 |
-| ------ | ------------------------------------ | --------------------------- |
-| POST   | `/api/payments/redsys/create/`       | Create Redsys payment       |
-| POST   | `/api/payments/redsys/notification/` | Redsys payment notification |
-
-### Staff
-
-| Method       | Endpoint                         | Description                |
-| ------------ | -------------------------------- | -------------------------- |
-| GET          | `/api/staff/orders/`             | List all orders            |
-| PATCH        | `/api/staff/orders/<id>/status/` | Update order status        |
-| GET/POST     | `/api/staff/categories/`         | List or create categories  |
-| PATCH/DELETE | `/api/staff/categories/<id>/`    | Update or delete category  |
-| GET/POST     | `/api/staff/products/`           | List or create products    |
-| PATCH/DELETE | `/api/staff/products/<id>/`      | Update or delete product   |
-| GET/POST     | `/api/staff/timeslots/`          | List or create time slots  |
-| PATCH/DELETE | `/api/staff/timeslots/<id>/`     | Update or delete time slot |
+| Método | Endpoint              | Descripción                             |
+| ------ | --------------------- | --------------------------------------- |
+| POST   | `/api/auth/register/` | Registrar usuario                       |
+| POST   | `/api/auth/login/`    | Iniciar sesión con usuario y contraseña |
+| POST   | `/api/auth/google/`   | Iniciar sesión con Google               |
+| GET    | `/api/auth/me/`       | Obtener usuario autenticado             |
 
 ---
 
-## Security Notes
+### Catálogo
 
-* Secret keys are never stored in the repository.
-* Redsys credentials are stored only in backend environment variables.
-* Staff endpoints are protected with role-based permissions.
-* JWT tokens are required for private API access.
-* Normal users cannot access the staff dashboard.
-* Cafeteria staff users must be created or authorized by an administrator.
-* Production CORS and CSRF origins are explicitly configured.
+| Método | Endpoint                 | Descripción                |
+| ------ | ------------------------ | -------------------------- |
+| GET    | `/api/categories/`       | Listar categorías          |
+| GET    | `/api/products/`         | Listar productos           |
+| GET    | `/api/products/popular/` | Listar productos populares |
 
 ---
 
-## Testing Checklist
+### Pedidos
 
-### Customer
-
-* Register a new user.
-* Log in with username and password.
-* Log in with Google.
-* Browse categories and products.
-* Add products to cart.
-* Select pickup time slot.
-* Create an order.
-* Pay with Redsys test card.
-* Check order in “My Orders”.
-
-### Cafeteria Staff
-
-* Log in with authorized staff user.
-* View all orders.
-* Update order status.
-* Create category.
-* Edit category.
-* Create product.
-* Edit product.
-* Disable product.
-* Create pickup time slot.
-* Edit pickup time slot.
-* Disable pickup time slot.
-
-### Admin
-
-* Log in to Django admin.
-* Manage users.
-* Assign staff roles.
-* Review products.
-* Review orders.
-* Check payment status.
+| Método | Endpoint                 | Descripción                     |
+| ------ | ------------------------ | ------------------------------- |
+| GET    | `/api/timeslots/`        | Listar franjas horarias activas |
+| POST   | `/api/orders/`           | Crear pedido                    |
+| GET    | `/api/orders/my-orders/` | Listar pedidos del usuario      |
 
 ---
 
-## Known Limitations
+### Pagos
 
-* Redsys is configured in test mode.
-* Payments do not charge real money.
-* Staff users must be created or authorized manually.
-* Product images currently depend on URL-based image fields or existing backend data.
-* Advanced analytics are not included yet.
-
----
-
-## Future Improvements
-
-* Order detail screen for customers.
-* Real-time order updates.
-* Email notifications.
-* Push notifications.
-* Daily sales summary.
-* Product image upload from staff panel.
-* Stock control.
-* QR code order pickup.
-* Advanced admin statistics.
-* Improved accessibility testing.
-* Progressive Web App support.
+| Método | Endpoint                             | Descripción                    |
+| ------ | ------------------------------------ | ------------------------------ |
+| POST   | `/api/payments/redsys/create/`       | Crear operación de pago Redsys |
+| POST   | `/api/payments/redsys/notification/` | Recibir notificación de Redsys |
 
 ---
 
-## Author
+### Personal de cafetería
 
-Developed by **fdavidf07** as a full-stack web application project for the cafeteria of **IES Pío Baroja**.
+| Método       | Endpoint                         | Descripción                      |
+| ------------ | -------------------------------- | -------------------------------- |
+| GET          | `/api/staff/orders/`             | Listar todos los pedidos         |
+| PATCH        | `/api/staff/orders/<id>/status/` | Actualizar estado de pedido      |
+| GET/POST     | `/api/staff/categories/`         | Listar o crear categorías        |
+| PATCH/DELETE | `/api/staff/categories/<id>/`    | Editar o eliminar categoría      |
+| GET/POST     | `/api/staff/products/`           | Listar o crear productos         |
+| PATCH/DELETE | `/api/staff/products/<id>/`      | Editar o eliminar producto       |
+| GET/POST     | `/api/staff/timeslots/`          | Listar o crear franjas horarias  |
+| PATCH/DELETE | `/api/staff/timeslots/<id>/`     | Editar o eliminar franja horaria |
 
 ---
 
-## License
+## Seguridad
 
-This project is intended for educational purposes.
+* Las claves secretas no se almacenan en el repositorio.
+* Las credenciales de Redsys solo están en variables de entorno del backend.
+* Los endpoints privados requieren autenticación JWT.
+* El panel de cafetería está protegido por rol.
+* Los usuarios normales no pueden acceder a la gestión interna.
+* Los orígenes CORS y CSRF están configurados explícitamente.
+* El entorno de producción usa `DEBUG=False`.
 
 ---
 
-## Final Status
+## Checklist de pruebas
 
-The application is fully deployed and functional:
+### Cliente
+
+* Registrar usuario nuevo.
+* Iniciar sesión con usuario y contraseña.
+* Iniciar sesión con Google.
+* Ver productos.
+* Filtrar por categoría.
+* Añadir productos al carrito.
+* Seleccionar horario.
+* Crear pedido.
+* Pagar con Redsys TEST.
+* Consultar pedido en “Mis pedidos”.
+
+---
+
+### Personal de cafetería
+
+* Iniciar sesión con usuario autorizado.
+* Ver todos los pedidos.
+* Cambiar estado de un pedido.
+* Crear categoría.
+* Editar categoría.
+* Crear producto.
+* Editar producto.
+* Desactivar producto.
+* Crear franja horaria.
+* Editar franja horaria.
+* Desactivar franja horaria.
+
+---
+
+### Administrador
+
+* Entrar al panel de Django.
+* Gestionar usuarios.
+* Asignar rol de personal de cafetería.
+* Revisar pedidos.
+* Revisar productos.
+* Comprobar estado de pagos.
+
+---
+
+## Limitaciones actuales
+
+* Redsys está configurado en entorno de pruebas.
+* Los pagos no realizan cobros reales.
+* Los usuarios de cafetería deben ser creados o autorizados manualmente.
+* La aplicación no incluye todavía estadísticas avanzadas.
+* La subida de imágenes desde el panel de cafetería no está implementada todavía.
+
+---
+
+## Posibles mejoras futuras
+
+* Pantalla de detalle del pedido.
+* Notificaciones en tiempo real.
+* Notificaciones por email.
+* Notificaciones push.
+* Panel de estadísticas diarias.
+* Control de stock.
+* Subida de imágenes de producto.
+* Código QR para recogida de pedidos.
+* Filtros avanzados en el panel de cafetería.
+* Modo PWA para instalar la app en móvil.
+* Mejoras de accesibilidad.
+
+---
+
+## Autor
+
+Proyecto desarrollado por **fdavidf07** como aplicación full-stack para la cafetería del **IES Pío Baroja**.
+
+---
+
+## Licencia
+
+Este proyecto ha sido desarrollado con fines educativos.
+
+---
+
+## Estado final del proyecto
 
 ```text
-Frontend: React + Vite on Vercel
-Backend: Django REST Framework on Railway
-Database: PostgreSQL on Railway
-Payments: Redsys TEST
-Authentication: JWT + Google OAuth
-Roles: Customer and cafeteria staff
+Frontend: React + Vite desplegado en Vercel
+Backend: Django REST Framework desplegado en Railway
+Base de datos: PostgreSQL en Railway
+Pagos: Redsys TEST
+Autenticación: JWT + Google OAuth
+Roles: Cliente y personal de cafetería
+Estado: Funcional y desplegado
 ```
