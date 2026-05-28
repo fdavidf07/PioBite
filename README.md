@@ -826,3 +826,4 @@ Autenticación: JWT + Google OAuth
 Roles: Cliente y personal de cafetería
 Estado: Funcional y desplegado
 ```
+.
