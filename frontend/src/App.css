@@ -1,15 +1,23 @@
 /*
-  Estilos principales de PíoBite.
+  App.css final para PíoBite.
 
-  Diseño mobile first para:
-  - Login / registro
-  - Catálogo cliente
+  Este archivo controla todo el diseño de la app:
+  - Pantalla de login y registro
+  - Catálogo de cliente
   - Carrito
   - Checkout
+  - Confirmación de pedido
   - Mis pedidos
   - Perfil
-  - Panel cafetería
+  - Panel de personal de cafetería
+
+  Está preparado para producción en Vercel usando 100dvh, evitando que la app
+  se corte por abajo o se haga más ancha en móvil.
 */
+
+/* =========================
+   RESET GENERAL
+   ========================= */
 
 * {
   box-sizing: border-box;
@@ -18,10 +26,17 @@
 html,
 body,
 #root {
-  margin: 0;
+  width: 100%;
+  min-width: 0;
   min-height: 100%;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
   background: #e7f7ef;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #022c22;
 }
 
@@ -37,24 +52,79 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* =========================
+   LAYOUT PRINCIPAL
+   ========================= */
+
 .app {
-  min-height: 100vh;
+  width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   justify-content: center;
+  align-items: stretch;
   background: linear-gradient(180deg, #ddf7eb 0%, #f8fffb 100%);
 }
 
 .phone-shell {
   width: 100%;
   max-width: 430px;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+  margin: 0 auto;
   background: #fffdf8;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  border-radius: 0;
   box-shadow: 0 0 45px rgba(2, 44, 34, 0.08);
 }
+
+/* En escritorio se ve como móvil centrado */
+@media (min-width: 768px) {
+  .app {
+    align-items: center;
+  }
+
+  .phone-shell {
+    height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: 16px auto;
+    border-radius: 34px;
+  }
+}
+
+/* En móvil real ocupa toda la pantalla */
+@media (max-width: 767px) {
+  .phone-shell {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+.content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 16px 104px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================
+   AUTENTICACIÓN
+   ========================= */
 
 .auth-phone-shell {
   background: linear-gradient(180deg, #dff7ea 0%, #f8fffb 100%);
@@ -62,8 +132,15 @@ button {
   padding: 22px 16px;
 }
 
+@media (max-width: 767px) {
+  .auth-phone-shell {
+    padding: 18px 14px;
+  }
+}
+
 .auth-panel {
   width: 100%;
+  max-width: 100%;
   background: linear-gradient(180deg, #09a56c 0%, #087552 100%);
   color: white;
   border-radius: 34px;
@@ -217,11 +294,17 @@ button {
 }
 
 .google-login-box {
+  width: 100%;
   display: grid;
   place-items: center;
   background: white;
   border-radius: 16px;
   padding: 8px;
+  overflow: hidden;
+}
+
+.google-login-box > div {
+  max-width: 100%;
 }
 
 .auth-staff-note {
@@ -235,21 +318,26 @@ button {
 }
 
 .loading-auth {
+  min-height: 100%;
   text-align: center;
   display: grid;
   place-items: center;
+  align-content: center;
   gap: 10px;
-  min-height: 100vh;
   color: #047857;
 }
 
+/* =========================
+   HEADER CLIENTE
+   ========================= */
+
 .hero {
+  flex-shrink: 0;
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: white;
   padding: 28px 18px 26px;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
-  flex-shrink: 0;
 }
 
 .top-row {
@@ -318,6 +406,7 @@ button {
 
 .search-box input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -330,11 +419,9 @@ button {
   color: rgba(255, 255, 255, 0.78);
 }
 
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 16px 92px;
-}
+/* =========================
+   SECCIONES Y TARJETAS
+   ========================= */
 
 .section-title-row {
   display: flex;
@@ -357,12 +444,40 @@ button {
   font-weight: 950;
 }
 
+.error-box,
+.loading-card,
+.empty-card {
+  background: white;
+  border-radius: 22px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
+  color: #4d7c6f;
+  font-weight: 800;
+}
+
+.error-box {
+  background: #ffe1e1;
+  color: #b42318;
+  margin-bottom: 14px;
+}
+
+/* =========================
+   CATEGORÍAS
+   ========================= */
+
 .category-list {
   display: flex;
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 6px;
   margin-bottom: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-list::-webkit-scrollbar,
+.horizontal-products::-webkit-scrollbar {
+  display: none;
 }
 
 .category-chip {
@@ -381,12 +496,17 @@ button {
   color: white;
 }
 
+/* =========================
+   PRODUCTOS
+   ========================= */
+
 .horizontal-products {
   display: flex;
   gap: 14px;
   overflow-x: auto;
   padding-bottom: 10px;
   margin-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .products-grid {
@@ -396,6 +516,7 @@ button {
 }
 
 .product-card {
+  max-width: 100%;
   background: white;
   border-radius: 22px;
   overflow: hidden;
@@ -404,6 +525,7 @@ button {
 
 .product-card.compact {
   min-width: 160px;
+  max-width: 160px;
 }
 
 .product-image {
@@ -484,6 +606,10 @@ button {
   place-items: center;
 }
 
+/* =========================
+   HORARIOS PREVIEW
+   ========================= */
+
 .timeslot-preview {
   margin-top: 22px;
 }
@@ -515,19 +641,24 @@ button {
   color: #b42318;
 }
 
+/* =========================
+   NAVEGACIÓN INFERIOR
+   ========================= */
+
 .bottom-nav {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  min-height: 70px;
+  z-index: 30;
+  min-height: 72px;
   background: white;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   box-shadow: 0 -10px 30px rgba(2, 44, 34, 0.08);
-  padding: 8px 6px;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
 }
 
 .nav-item {
@@ -544,23 +675,38 @@ button {
   color: #00a86b;
 }
 
+/* =========================
+   CARRITO
+   ========================= */
+
 .cart-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(2, 44, 34, 0.35);
+  z-index: 60;
+  overflow: hidden;
   display: flex;
   align-items: flex-end;
-  z-index: 20;
+  background: rgba(2, 44, 34, 0.35);
 }
 
 .cart-drawer {
   width: 100%;
-  max-height: 82vh;
+  max-width: 100%;
+  max-height: 82dvh;
+  min-height: 260px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fffdf8;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  padding: 12px 16px 20px;
+  padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-height: 720px) {
+  .cart-drawer {
+    max-height: 74dvh;
+  }
 }
 
 .drawer-handle {
@@ -598,23 +744,24 @@ button {
   font-weight: 950;
 }
 
-.empty-cart,
-.empty-card,
-.loading-card,
-.error-box {
+.empty-cart {
   background: white;
   border-radius: 22px;
-  padding: 18px;
+  padding: 20px;
+  margin-top: 18px;
   text-align: center;
-  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
   color: #4d7c6f;
-  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
 }
 
-.error-box {
-  background: #ffe1e1;
-  color: #b42318;
-  margin-bottom: 14px;
+.empty-cart h3 {
+  margin: 10px 0 6px;
+  color: #022c22;
+}
+
+.empty-cart p {
+  margin: 0;
+  font-weight: 750;
 }
 
 .cart-items {
@@ -642,6 +789,10 @@ button {
   display: grid;
   place-items: center;
   font-size: 22px;
+}
+
+.cart-item-info {
+  min-width: 0;
 }
 
 .cart-item-info h3 {
@@ -686,6 +837,9 @@ button {
 }
 
 .cart-total {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
   margin-top: 18px;
   background: #022c22;
   color: white;
@@ -720,15 +874,12 @@ button {
   font-size: 15px;
 }
 
-.secondary-order-button {
-  width: 100%;
-  background: white;
-  color: #022c22;
-  border: 1px solid rgba(2, 44, 34, 0.08);
-  margin-top: 10px;
-}
+/* =========================
+   CHECKOUT
+   ========================= */
 
 .checkout-header {
+  flex-shrink: 0;
   padding: 24px 18px;
   background: #047857;
   color: white;
@@ -766,6 +917,7 @@ button {
 }
 
 .checkout-card {
+  max-width: 100%;
   background: white;
   border-radius: 24px;
   padding: 16px;
@@ -826,14 +978,17 @@ button {
   color: white;
 }
 
-.checkout-slot:disabled {
-  opacity: 0.45;
-}
+/* =========================
+   CONFIRMACIÓN DE PEDIDO
+   ========================= */
 
 .confirmation-screen {
-  padding: 40px 18px;
-  text-align: center;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  padding: 40px 18px calc(24px + env(safe-area-inset-bottom));
+  text-align: center;
+  -webkit-overflow-scrolling: touch;
 }
 
 .confirmation-icon {
@@ -882,23 +1037,19 @@ button {
   font-size: 32px;
 }
 
-.confirmation-card,
-.profile-card,
-.staff-card,
-.staff-mini-card {
+.confirmation-card {
+  max-width: 100%;
   background: white;
   border-radius: 22px;
   padding: 14px;
-  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
-}
-
-.confirmation-card {
   margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
 }
 
 .confirmation-card div {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #eef2ef;
   font-weight: 900;
@@ -908,12 +1059,29 @@ button {
   border-bottom: none;
 }
 
+.secondary-order-button {
+  width: 100%;
+  background: white;
+  color: #022c22;
+  border: 1px solid rgba(2, 44, 34, 0.08);
+  margin-top: 10px;
+}
+
+/* =========================
+   MIS PEDIDOS / PERFIL
+   ========================= */
+
 .simple-screen {
   padding-bottom: 20px;
 }
 
 .profile-card {
+  max-width: 100%;
+  background: white;
+  border-radius: 22px;
+  padding: 18px;
   text-align: center;
+  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
 }
 
 .profile-avatar {
@@ -950,11 +1118,16 @@ button {
   font-weight: 950;
 }
 
+/* =========================
+   PANEL CAFETERÍA
+   ========================= */
+
 .staff-shell {
   background: #f8faf8;
 }
 
 .staff-hero {
+  flex-shrink: 0;
   background: linear-gradient(135deg, #022c22 0%, #047857 100%);
   color: white;
   padding: 24px 18px;
@@ -987,6 +1160,7 @@ button {
 }
 
 .staff-tabs {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
@@ -1013,6 +1187,7 @@ button {
 
 .staff-content {
   padding-top: 12px;
+  padding-bottom: 24px;
 }
 
 .staff-list {
@@ -1022,6 +1197,15 @@ button {
 
 .compact-list {
   margin-bottom: 18px;
+}
+
+.staff-card,
+.staff-mini-card {
+  max-width: 100%;
+  background: white;
+  border-radius: 22px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(2, 44, 34, 0.06);
 }
 
 .staff-card-top,
@@ -1055,11 +1239,11 @@ button {
 
 .status-pill {
   background: #ecfdf5;
-  color: #047857 !important;
+  color: #047857;
   border-radius: 999px;
   padding: 6px 10px;
-  font-size: 11px !important;
-  font-weight: 950 !important;
+  font-size: 11px;
+  font-weight: 950;
   white-space: nowrap;
 }
 
@@ -1113,6 +1297,7 @@ button {
 }
 
 .staff-form {
+  max-width: 100%;
   background: white;
   border-radius: 24px;
   padding: 14px;
@@ -1126,6 +1311,7 @@ button {
 .staff-form textarea,
 .staff-form select {
   width: 100%;
+  max-width: 100%;
   border: 1px solid rgba(2, 44, 34, 0.08);
   border-radius: 15px;
   padding: 12px;
@@ -1170,14 +1356,28 @@ button {
   color: #022c22 !important;
 }
 
-@media (min-width: 700px) {
-  .phone-shell {
-    min-height: 92vh;
-    margin: 24px 0;
-    border-radius: 34px;
-  }
+/* =========================
+   FIXES ANTI-OVERFLOW
+   ========================= */
 
-  .auth-phone-shell {
-    min-height: 92vh;
-  }
+.auth-panel,
+.product-card,
+.cart-drawer,
+.checkout-card,
+.staff-card,
+.staff-form,
+.profile-card,
+.confirmation-card {
+  max-width: 100%;
+}
+
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
+}
+
+img {
+  max-width: 100%;
 }
